@@ -1,9 +1,10 @@
-import { Column, Entity, ManyToOne } from 'typeorm';
+import {  Column, Entity, ManyToOne } from 'typeorm';
 import { Users } from '../../users/entity/users.entity';
 import { Category } from '../../category/entity/category.entity';
+import { BaseEntity } from '../../commons/entity/base.entity';
 
 @Entity()
-export class Expenses{
+export class Expenses extends BaseEntity{
 	@Column()
 	memo: string;
 
