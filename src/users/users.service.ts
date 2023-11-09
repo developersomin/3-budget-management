@@ -12,7 +12,7 @@ export class UsersService {
 	constructor(@InjectRepository(Users) private readonly usersRepository: Repository<Users>, private readonly authService: AuthService) {
 	}
 	findOne(options: FindOptionsWhere<Users>): Promise<Users> {
-		return this.usersRepository.findOne({ where: options, relations: ['evaluations'] });
+		return this.usersRepository.findOne({ where: options});
 	}
 
 	async signup(createUserDto:CreateUserDto):Promise<Users>{

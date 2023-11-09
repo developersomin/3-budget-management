@@ -13,6 +13,7 @@ services:
     env_file:
       - ./.env.docker
 
+
   my-database:
     image: mysql:latest
     environment:
