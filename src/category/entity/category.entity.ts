@@ -20,9 +20,6 @@ export class Category {
 	@OneToMany(()=>Expenses , (expense)=>expense.category)
 	expenses: Expenses[];
 
-	@OneToMany(()=>Budgets , (budget)=>budget.category)
-	budgets: Budgets[];
-
 	@CreateDateColumn()
 	createdAt: Date;
 

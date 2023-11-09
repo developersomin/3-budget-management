@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne } from 'typeorm';
+import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
 import { Category } from '../../category/entity/category.entity';
 import { Users } from '../../users/entity/users.entity';
 import { BaseEntity } from '../../commons/entity/base.entity';
@@ -11,6 +11,7 @@ export class Budgets extends BaseEntity{
 	@ManyToOne(()=>Users, (user)=>user.budgets)
 	user: Users;
 
-	@ManyToOne(()=>Category, (category)=>category.budgets)
+	@JoinColumn()
+	@OneToOne(()=>Category)
 	category:Category;
 }
