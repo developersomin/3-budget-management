@@ -5,7 +5,7 @@ import { BaseEntity } from '../../commons/entity/base.entity';
 
 @Entity()
 export class Expenses extends BaseEntity{
-	@Column()
+	@Column({nullable:true})
 	memo: string;
 
 	@Column()
