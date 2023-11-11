@@ -7,9 +7,10 @@ import { AuthService } from '../auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { UsersModule } from '../users/users.module';
+import { CategoryModule } from "../category/category.module";
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Budgets]),UsersModule],
+  imports: [TypeOrmModule.forFeature([Budgets]),UsersModule,CategoryModule],
   controllers: [BudgetsController],
   providers: [BudgetsService,AuthService,JwtService],
 })

@@ -4,21 +4,17 @@ import { Category } from './entity/category.entity';
 import { Repository } from 'typeorm';
 
 @Injectable()
-export class CategoryService implements OnModuleInit{
+export class CategoryService {
 	constructor(@InjectRepository(Category) private readonly categoryRepository: Repository<Category>) {
 	}
 
-
-	async onModuleInit() {
-		const categoryNames = [{ name: '식비'},{ name: '교통'},{ name: '통신비'},{ name: '거주'},{ name: '쇼핑'}]
-		await this.categoryRepository.save(categoryNames);
-    }
-
-
-
-	getCategory(): Promise<Category[]>{
+	createCategory(name) {
+		return this.categoryRepository.save({ name });
+	}
+	findCategory(name){
+		return this.categoryRepository.findOne({ where: {name}});
+	}
+	findCategories(): Promise<Category[]> {
 		return this.categoryRepository.find();
 	}
-
-
 }
