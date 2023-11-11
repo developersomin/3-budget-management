@@ -1,31 +1,17 @@
 import {
 	Column,
-	CreateDateColumn,
-	DeleteDateColumn,
-	Entity,
-	OneToMany,
-	PrimaryColumn,
-	UpdateDateColumn,
-} from 'typeorm';
-import { Expenses } from '../../expenses/entity/expenses.entity';
-import { Budgets } from '../../budgets/entity/budgets.entity';
-import { BaseEntity } from '../../commons/entity/base.entity';
-import { OmitType } from '@nestjs/mapped-types';
+	Entity, OneToMany
+} from "typeorm";
+import { BaseEntity } from "../../commons/entity/base.entity";
+import { Budgets } from "../../budgets/entity/budgets.entity";
+import { Expenses } from "../../expenses/entity/expenses.entity";
 
 @Entity()
-export class Category {
-	@PrimaryColumn()
+export class Category extends BaseEntity {
+	@Column({ unique: true})
 	name: string;
-
-	@OneToMany(()=>Expenses , (expense)=>expense.category)
+	@OneToMany(() => Budgets, (budget) => budget.category)
+	budgets: Budgets[];
+	@OneToMany(() => Expenses, (expense) => expense.category)
 	expenses: Expenses[];
-
-	@CreateDateColumn()
-	createdAt: Date;
-
-	@UpdateDateColumn()
-	updatedAt: Date;
-
-	@DeleteDateColumn()
-	deletedAt: Date;
 }

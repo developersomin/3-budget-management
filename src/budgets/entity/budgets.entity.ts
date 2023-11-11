@@ -6,12 +6,11 @@ import { BaseEntity } from '../../commons/entity/base.entity';
 @Entity()
 export class Budgets extends BaseEntity{
 	@Column()
-	money: string;
+	money: number;
 
 	@ManyToOne(()=>Users, (user)=>user.budgets)
 	user: Users;
 
-	@JoinColumn()
-	@OneToOne(()=>Category)
-	category:Category;
+	@ManyToOne(() => Category, (category) => category.budgets,{ onDelete: 'CASCADE' })
+	category: Category;
 }

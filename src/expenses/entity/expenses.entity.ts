@@ -15,6 +15,6 @@ export class Expenses extends BaseEntity{
 	user: Users;
 
 	@JoinColumn()
-	@OneToOne(()=>Category)
+	@ManyToOne(() => Category, (category) => category.expenses, { onDelete: 'CASCADE' })
 	category: Category;
 }
