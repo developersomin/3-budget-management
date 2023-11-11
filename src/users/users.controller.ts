@@ -7,11 +7,11 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post('/login')
-  async login(@Body('nickname') nickname: string, @Body('password') password: string) {
+  login(@Body('nickname') nickname: string, @Body('password') password: string) {
     return this.usersService.login({ nickname, password });
   }
   @Post('/signup')
-  async signup(@Body() createUserDto: CreateUserDto) {
+  signup(@Body() createUserDto: CreateUserDto) {
     return this.usersService.signup(createUserDto);
   }
 
