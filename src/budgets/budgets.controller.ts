@@ -10,12 +10,12 @@ export class BudgetsController {
 
   @Post()
   @UseGuards(AccessTokenGuard)
-  async postBudget(@Body('categoryName') categoryName: string, @Body('money') money: number, @User('id') userId: string) {
+  postBudget(@Body('categoryName') categoryName: string, @Body('money') money: number, @User('id') userId: string) {
     return this.budgetsService.postBudget(categoryName,money,userId);
   }
 
   @Post("/recommend")
-  async designBudget(@Body()designBudgetDto:DesignBudgetDto) {
+  designBudget(@Body()designBudgetDto:DesignBudgetDto) {
     return this.budgetsService.designBudget(designBudgetDto);
   }
 }

@@ -5,6 +5,7 @@ import { Repository } from 'typeorm';
 import { UsersService } from "../users/users.service";
 import { CategoryService } from "../category/category.service";
 import { DesignBudgetDto } from "./dto/designBudget.dto";
+import { Users } from "../users/entity/users.entity";
 
 @Injectable()
 export class BudgetsService {
@@ -20,7 +21,7 @@ export class BudgetsService {
 	 *  3-1.카테고리가 없을때  카테고리 생성 후 예산 저장
 	 *  3-2.카테고리가 있을때  그냥 예산 저장
 	 */
-	async findByUserAndCategory(userId,categoryName){
+	async findByUserAndCategory(userId,categoryName): Promise<Budgets>{
 		const budget = await this.budgetsRepository.findOne({
 			where: {
 				user: { id: userId },
@@ -30,28 +31,28 @@ export class BudgetsService {
 		return budget;
 	}
 
-	async postBudget(categoryName,money,userId){
+	async postBudget(categoryName, money, userId): Promise<Budgets> {
 		const budget = await this.findByUserAndCategory(userId, categoryName);
 		if (budget) {
 			return await this.budgetsRepository.save({
 				...budget,
-				money,
+				money
 			});
 		} else {
 			const category = await this.categoryService.findCategory(categoryName);
-			if(category){
+			if (category) {
 				return this.budgetsRepository.save({
 					money,
 					user: { id: userId },
 					category: { id: category.id }
 				});
-			} else{
+			} else {
 				const newCategory = await this.categoryService.createCategory(categoryName);
 				return this.budgetsRepository.save({
 					money,
-					user:{ id: userId},
+					user: { id: userId },
 					category: { id: newCategory.id }
-				})
+				});
 			}
 		}
 	}
@@ -66,7 +67,7 @@ export class BudgetsService {
 	 * 7.카테고리 비율중 0인 것들의 키를 제거
 	 * 8.나의 예산 금액에 비율을 곱하여 예산 설계 금액을 추천해줌
 	 */
-	async findBudgetedUser(){
+	async findBudgetedUser(): Promise<Users[]>{
 		const users = await this.usersService.findUsersWithBudgets();
 		if (users.length === 0) {
 			throw new InternalServerErrorException("예산을 설계한 유저들이 없습니다.");
@@ -74,7 +75,7 @@ export class BudgetsService {
 		return users;
 	}
 
-	async getCategories(){
+	async getCategories():Promise<{ [key: string]: number }>{
 		const categories = await this.categoryService.findCategories();
 		const budgetRatio = { "기타": 0 };
 		for (const category of categories) {
@@ -83,9 +84,9 @@ export class BudgetsService {
 		return budgetRatio;
 	}
 
-	async sumRatioUsers(users){
+	async sumRatioUsers(users): Promise<{ [key: string]: number }> {
 		const budgetRatio = await this.getCategories();
-		for(const user of users) {
+		for (const user of users) {
 			const totalMoney = user.budgets.reduce((total, budget) => total + budget.money, 0);
 			for (const budget of user.budgets) {
 				const categoryName = budget.category.name;
@@ -106,7 +107,7 @@ export class BudgetsService {
 		return budgetRatio;
 	}
 
-	async designBudget(dto: DesignBudgetDto) {
+	async designBudget(dto: DesignBudgetDto):Promise<{ [key: string]: number }> {
 		const users = await this.findBudgetedUser();
 		const budgetRatio = await this.sumRatioUsers(users);
 		console.log("amount:" + dto.amount);
@@ -114,9 +115,7 @@ export class BudgetsService {
 		for (const key in budgetRatio) {
 			budgetRatio[key] = Math.floor(budgetRatio[key] * dto.amount / 10000) * 10000;
 		}
-
 		let sum = 0;
-
 		for (let key in budgetRatio) {
 			sum += budgetRatio[key];
 		}
