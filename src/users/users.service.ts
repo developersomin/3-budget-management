@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FindOptionsWhere, IsNull, Not, Repository } from "typeorm";
 import { Users } from './entity/users.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcryptjs';
@@ -12,7 +12,15 @@ export class UsersService {
 	constructor(@InjectRepository(Users) private readonly usersRepository: Repository<Users>, private readonly authService: AuthService) {
 	}
 	findOne(options: FindOptionsWhere<Users>): Promise<Users> {
-		return this.usersRepository.findOne({ where: options, relations: ['evaluations'] });
+		return this.usersRepository.findOne({ where: options});
+	}
+	//find 함수는 leftjoin으로 budget 없는 것도 모두 출력됨
+	//그러므로 쿼리빌더를 사용하여 이너조인을 사용
+	findUsersWithBudgets() {
+		return this.usersRepository.createQueryBuilder('users')
+			.innerJoinAndSelect('users.budgets', 'budgets')
+			.innerJoinAndSelect('budgets.category', 'category')
+			.getMany();
 	}
 
 	async signup(createUserDto:CreateUserDto):Promise<Users>{
