@@ -1,9 +1,10 @@
-import { Column, Entity, ManyToOne, OneToMany } from "typeorm";
+import { Column, Entity, ManyToOne, OneToMany, Unique } from "typeorm";
 import { Users } from '../../users/entity/users.entity';
 import { BaseEntity } from '../../commons/entity/base.entity';
-import { BudgetsCategory } from "../../budgetsCategory/entity/budgets-category.entity";
+import { BudgetCategory } from "../../budget-category/entity/budgets-category.entity";
 
 @Entity()
+@Unique(['year','month'])
 export class Budgets extends BaseEntity{
 	@Column()
 	year: number;
@@ -11,12 +12,12 @@ export class Budgets extends BaseEntity{
 	@Column()
 	month: number;
 
-	@Column()
+	@Column({nullable:true})
 	totalAmount: number;
 
 	@ManyToOne(()=>Users, (user)=>user.budgets)
 	user: Users;
 
-	@OneToMany(()=> BudgetsCategory, (budgetCategory)=>budgetCategory.budget)
-	budgetCategory:BudgetsCategory[];
+	@OneToMany(()=> BudgetCategory, (budgetCategory)=>budgetCategory.category)
+	budgetCategory:BudgetCategory[];
 }

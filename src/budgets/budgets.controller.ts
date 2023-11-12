@@ -2,7 +2,9 @@ import { Body, Controller, ParseFloatPipe, Post, UseGuards } from "@nestjs/commo
 import { BudgetsService } from './budgets.service';
 import { AccessTokenGuard } from '../auth/guard/jwt-token.guard';
 import { User } from '../users/decorator/users.decorator';
-import { DesignBudgetDto } from "./dto/designBudget.dto";
+import { DesignBudgetDto } from "./dto/design-budget.dto";
+import { CreateCategoryBudgetDto } from "./dto/create-category-budget.dto";
+import { BudgetCategory } from "../budget-category/entity/budgets-category.entity";
 
 @Controller('budgets')
 export class BudgetsController {
@@ -10,8 +12,8 @@ export class BudgetsController {
 
   @Post()
   @UseGuards(AccessTokenGuard)
-  postBudget(@Body('categoryName') categoryName: string, @Body('money') money: number, @User('id') userId: string) {
-    return this.budgetsService.postBudget(categoryName,money,userId);
+  postBudget(@Body() createCategoryBudgetDto: CreateCategoryBudgetDto, @User("id") userId: string): Promise<BudgetCategory> {
+    return this.budgetsService.budgetByCategory(createCategoryBudgetDto, userId);
   }
 
   @Post("/recommend")
