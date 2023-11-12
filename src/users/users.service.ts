@@ -12,7 +12,7 @@ export class UsersService {
 	constructor(@InjectRepository(Users) private readonly usersRepository: Repository<Users>, private readonly authService: AuthService) {
 	}
 	findOne(options: FindOptionsWhere<Users>): Promise<Users> {
-		return this.usersRepository.findOne({ where: options});
+		return this.usersRepository.findOne({ where: options,relations:['budgets']});
 	}
 	//find 함수는 leftjoin으로 budget 없는 것도 모두 출력됨
 	//그러므로 쿼리빌더를 사용하여 이너조인을 사용
