@@ -4,11 +4,11 @@ import { Expenses } from "./entity/expenses.entity";
 import { Repository } from "typeorm";
 import { BudgetsService } from "../budgets/budgets.service";
 import {
-  ICalculateDate, ICategoryByTotalCost,
+  ICalculateDate, ICategoryBySum, ICategoryByTotalCost,
   IExpenseGuideResult,
   IFindExpensesQuery,
-  IUsedUntilTodayExpense
-} from "./interface/expenses-service.interface";
+  IUsedUntilTodayExpense,
+} from './interface/expenses-service.interface';
 import { QuerySearchDto } from "./dto/query-search.dto";
 
 @Injectable()
@@ -40,7 +40,7 @@ export class ExpensesService {
 		});
 	}
 
-	updateTotalCostExpense(expense: Expenses, totalCost: number) {
+	updateTotalCostExpense(expense: Expenses, totalCost: number): Promise<Expenses> {
 		return this.expensesRepository.save({
 			...expense,
 			totalCost,
@@ -95,7 +95,7 @@ export class ExpensesService {
 		return totalSum ? totalSum.totalCost : 0;
 	}
 
-	async searchCategoryByTotalCost({ userId, startDate, endDate, categoryId, minCost, maxCost }) {
+	async searchCategoryByTotalCost({ userId, startDate, endDate, categoryId, minCost, maxCost }):Promise<ICategoryBySum[]> {
 		const qb = this.expensesRepository.createQueryBuilder('expenses');
 		this.findExpensesQuery({
 			qb: qb,
@@ -154,7 +154,7 @@ export class ExpensesService {
 
 	async expenseGuide(userId: string): Promise<IExpenseGuideResult> {
 		const { year, month, day, lastDayCount, firstDay, now } = this.calcDate();
-      const { totalTodayCost, ...todayExpenseSumByCategory } = await this.usedUntilTodayExpense(
+		const { totalTodayCost, ...todayExpenseSumByCategory } = await this.usedUntilTodayExpense(
 			userId,
 			firstDay,
 			now,
