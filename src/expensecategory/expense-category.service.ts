@@ -64,9 +64,7 @@ export class ExpenseCategoryService {
 		if (categoryName) {
 			category = await this.categoryService.findCategory(categoryName);
 			if (!category) {
-				category = await this.categoryService.createCategory({
-					name: categoryName,
-				});
+				category = await this.categoryService.createCategory(categoryName);
 			}
 			result = await this.expenseCategoryRepository.save({
 				...expenseCategory,
