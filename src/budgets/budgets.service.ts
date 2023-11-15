@@ -1,100 +1,142 @@
-import { BadRequestException, Injectable, InternalServerErrorException } from "@nestjs/common";
+import { forwardRef, Inject, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { InjectRepository } from '@nestjs/typeorm';
 import { Budgets } from './entity/budgets.entity';
 import { Repository } from 'typeorm';
 import { UsersService } from "../users/users.service";
 import { CategoryService } from "../category/category.service";
-import { DesignBudgetDto } from "./dto/designBudget.dto";
+import { DesignBudgetDto } from "./dto/design-budget.dto";
 import { Users } from "../users/entity/users.entity";
+import { BudgetCategoryService } from "../budgetcategory/budget-category.service";
+import { BudgetCategory } from "../budgetcategory/entity/budgets-category.entity";
+import { ICalcProperBudget } from "./interface/budget-service.interface";
+import { Expenses } from "../expenses/entity/expenses.entity";
 
 @Injectable()
 export class BudgetsService {
-	constructor(@InjectRepository(Budgets) private readonly budgetsRepository: Repository<Budgets>,
-							private readonly usersService: UsersService,
-							private readonly categoryService: CategoryService) {
+	constructor(
+		@InjectRepository(Budgets) private readonly budgetsRepository: Repository<Budgets>,
+		private readonly usersService: UsersService,
+		private readonly categoryService: CategoryService,
+		@Inject(forwardRef(() => BudgetCategoryService)) private readonly budgetCategoryService: BudgetCategoryService,
+	) {}
+
+	getBudget(budgetId: string) {
+		return this.budgetsRepository.findOne({ where: { id: budgetId }, relations: ['budgetCategory'] });
 	}
 
-	/** 예산 설정 API
-	 *  1.동일한 카테고리가 있는지 검색
-	 *  2.만약 동일 카테고리가 있을 시 금액만 변경됨
-	 *  3.동일 카테고리가 없을시 두가지 유형 있음
-	 *  3-1.카테고리가 없을때  카테고리 생성 후 예산 저장
-	 *  3-2.카테고리가 있을때  그냥 예산 저장
-	 */
-	async findByUserAndCategory(userId,categoryName): Promise<Budgets>{
-		const budget = await this.budgetsRepository.findOne({
-			where: {
-				user: { id: userId },
-				category: { name: categoryName }
-			}
+	findByMonthAndUserId(budgets: Pick<Budgets, 'year' | 'month'>, userId: string): Promise<Budgets> {
+		return this.budgetsRepository
+			.createQueryBuilder('budgets')
+			.innerJoinAndSelect('budgets.user', 'user')
+			.innerJoinAndSelect('budgets.budgetCategory', 'budgetCategory')
+			.innerJoinAndSelect('budgetCategory.category', 'category')
+			.where('user.id = :userId', { userId })
+			.andWhere('budgets.year = :year', { year: budgets.year })
+			.andWhere('budgets.month = :month', { month: budgets.month })
+			.getOne();
+	}
+
+	createBudget(budgets: Pick<Budgets, 'year' | 'month'>, userId: string): Promise<Budgets> {
+		return this.budgetsRepository.save({
+			year: budgets.year,
+			month: budgets.month,
+			user: {
+				id: userId,
+			},
 		});
-		return budget;
 	}
 
-	async postBudget(categoryName, money, userId): Promise<Budgets> {
-		const budget = await this.findByUserAndCategory(userId, categoryName);
-		if (budget) {
-			return await this.budgetsRepository.save({
-				...budget,
-				money
-			});
-		} else {
-			const category = await this.categoryService.findCategory(categoryName);
-			if (category) {
-				return this.budgetsRepository.save({
-					money,
-					user: { id: userId },
-					category: { id: category.id }
-				});
-			} else {
-				const newCategory = await this.categoryService.createCategory(categoryName);
-				return this.budgetsRepository.save({
-					money,
-					user: { id: userId },
-					category: { id: newCategory.id }
-				});
-			}
-		}
+	updateTotalAmount(budget: Budgets, totalAmount: number) {
+		return this.budgetsRepository.save({
+			...budget,
+			totalAmount,
+		});
 	}
-	
+
+	calcProperBudget(budget: Budgets, todayProperAmount: number): ICalcProperBudget {
+		const totalAmount = budget.totalAmount;
+		const budgetCategories = budget.budgetCategory;
+		const todayBudgetByCategory = {};
+		for (const budgetCategory of budgetCategories) {
+			const properAmountByCategory = (budgetCategory.amount / totalAmount) * todayProperAmount;
+			const categoryName = budgetCategory.category.name;
+			todayBudgetByCategory[categoryName] = properAmountByCategory;
+		}
+		return { ...todayBudgetByCategory, todayProperAmount };
+	}
+
 	/** 예산 설계 추천 API
 	 * 1.예산 설계된 유저들을 가져오고 유저들이 없으면 오류
 	 * 2.모드 카테고리 목록을 가져오고 카테고리 별 비율을 넣을 객체를 하나 만들고 초기화 함
 	 * 3.10% 미만은 기타에 넣어 주어야 하기 때문에 기타 키값도 초기화 함
 	 * 4.예산이 설계된 유저들의 카테고리별 비율을 계산하고 처음에 초기화 된 객체에 더해줌
 	 * 5.10% 미만의 비율들은 기타 카테고리에 더해줌
-	 * 6.다 더해진 비율들을 예산설계된 총 인원에서 나눠주어 비율 평균을 구함 
+	 * 6.다 더해진 비율들을 예산설계된 총 인원에서 나눠주어 비율 평균을 구함
 	 * 7.카테고리 비율중 0인 것들의 키를 제거
-	 * 8.나의 예산 금액에 비율을 곱하여 예산 설계 금액을 추천해줌
+	 * 8.나의 총 예산 금액에 비율을 곱하여 예산 설계 금액을 추천해줌
+	 * 9.만원 단위로 반올림 했기 때문에 차이가 조금 있음 이 부분은 차이난 만큼 기타에서 빼주고 더해줌
 	 */
-	async findBudgetedUser(): Promise<Users[]>{
+	async designBudget(dto: DesignBudgetDto, userId: string): Promise<BudgetCategory[]> {
+		const { year, month, totalAmount } = dto;
+		const users = await this.findBudgetedUser();
+		const budgetRatio = await this.sumRatioUsers(users);
+		for (const key in budgetRatio) {
+			budgetRatio[key] = Math.round((budgetRatio[key] * totalAmount) / 10000) * 10000;
+		}
+		let sum = 0;
+		for (let key in budgetRatio) {
+			sum += budgetRatio[key];
+		}
+		if (sum < totalAmount) {
+			budgetRatio['기타'] = budgetRatio['기타'] + (totalAmount - sum);
+		} else {
+			budgetRatio['기타'] = budgetRatio['기타'] - (sum - totalAmount);
+		}
+		for (let key in budgetRatio) {
+			await this.budgetCategoryService.budgetByCategory(
+				{
+					year,
+					month,
+					categoryName: key,
+					amount: budgetRatio[key],
+				},
+				userId,
+			);
+		}
+		const budget = await this.findByMonthAndUserId({ year, month }, userId);
+		return budget.budgetCategory;
+	}
+
+	async findBudgetedUser(): Promise<Users[]> {
 		const users = await this.usersService.findUsersWithBudgets();
 		if (users.length === 0) {
-			throw new InternalServerErrorException("예산을 설계한 유저들이 없습니다.");
+			throw new InternalServerErrorException('예산을 설계한 유저들이 없습니다.');
 		}
 		return users;
 	}
 
-	async getCategories():Promise<{ [key: string]: number }>{
+	async getCategories(): Promise<{ [key: string]: number }> {
 		const categories = await this.categoryService.findCategories();
-		const budgetRatio = { "기타": 0 };
+		const budgetRatio = { 기타: 0 };
 		for (const category of categories) {
 			budgetRatio[category.name] = 0;
 		}
 		return budgetRatio;
 	}
 
-	async sumRatioUsers(users): Promise<{ [key: string]: number }> {
+	async sumRatioUsers(users: Users[]): Promise<{ [key: string]: number }> {
 		const budgetRatio = await this.getCategories();
 		for (const user of users) {
-			const totalMoney = user.budgets.reduce((total, budget) => total + budget.money, 0);
 			for (const budget of user.budgets) {
-				const categoryName = budget.category.name;
-				const ratio = budget.money / totalMoney;
-				if (ratio > 0.1) {
-					budgetRatio[categoryName] = budgetRatio[categoryName] + ratio;
-				} else {
-					budgetRatio["기타"] = budgetRatio["기타"] + ratio;
+				const totalAmount = budget.totalAmount;
+				for (const budgetCategory of budget.budgetCategory) {
+					const categoryName = budgetCategory.category.name;
+					const ratio = budgetCategory.amount / totalAmount;
+					if (ratio > 0.1) {
+						budgetRatio[categoryName] = budgetRatio[categoryName] + ratio;
+					} else {
+						budgetRatio['기타'] = budgetRatio['기타'] + ratio;
+					}
 				}
 			}
 		}
@@ -106,23 +148,4 @@ export class BudgetsService {
 		}
 		return budgetRatio;
 	}
-
-	async designBudget(dto: DesignBudgetDto):Promise<{ [key: string]: number }> {
-		const users = await this.findBudgetedUser();
-		const budgetRatio = await this.sumRatioUsers(users);
-		console.log("amount:" + dto.amount);
-		console.log("budgetRatio" + budgetRatio);
-		for (const key in budgetRatio) {
-			budgetRatio[key] = Math.floor(budgetRatio[key] * dto.amount / 10000) * 10000;
-		}
-		let sum = 0;
-		for (let key in budgetRatio) {
-			sum += budgetRatio[key];
-		}
-		if (sum < dto.amount) {
-			budgetRatio["기타"] = budgetRatio["기타"] + (dto.amount - sum);
-		}
-		return budgetRatio;
-	}
-
 }

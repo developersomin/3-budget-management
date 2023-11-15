@@ -8,6 +8,8 @@ import { BudgetsModule } from './budgets/budgets.module';
 import { ExpensesModule } from './expenses/expenses.module';
 import { CategoryModule } from './category/category.module';
 import { AuthModule } from './auth/auth.module';
+import { BudgetCategoryModule } from './budgetcategory/budget-category.module';
+import { ExpenseCategoryModule } from './expensecategory/expense-category.module';
 
 @Module({
   imports: [
@@ -28,6 +30,8 @@ import { AuthModule } from './auth/auth.module';
     ExpensesModule,
     CategoryModule,
     AuthModule,
+    BudgetCategoryModule,
+    ExpenseCategoryModule,
     ],
   controllers: [AppController],
   providers: [AppService],

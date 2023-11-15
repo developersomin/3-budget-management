@@ -5,15 +5,15 @@ import { Repository } from 'typeorm';
 
 @Injectable()
 export class CategoryService {
-	constructor(@InjectRepository(Category) private readonly categoryRepository: Repository<Category>) {
-	}
+	constructor(@InjectRepository(Category) private readonly categoryRepository: Repository<Category>) {}
 
 	createCategory(name) {
 		return this.categoryRepository.save({ name });
 	}
-	findCategory(name){
-		return this.categoryRepository.findOne({ where: {name}});
+	findCategory(name) {
+		return this.categoryRepository.findOne({ where: { name } });
 	}
+
 	findCategories(): Promise<Category[]> {
 		return this.categoryRepository.find();
 	}

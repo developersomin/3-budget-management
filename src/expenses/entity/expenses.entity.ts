@@ -1,20 +1,23 @@
-import { Column, Entity, JoinColumn, ManyToOne, OneToOne } from 'typeorm';
+import { Column, Entity, ManyToOne, OneToMany, Unique } from "typeorm";
 import { Users } from '../../users/entity/users.entity';
-import { Category } from '../../category/entity/category.entity';
 import { BaseEntity } from '../../commons/entity/base.entity';
+import { ExpenseCategory } from "../../expensecategory/entity/expenses-category.entity";
 
 @Entity()
-export class Expenses extends BaseEntity{
-	@Column({nullable:true})
-	memo: string;
+@Unique(['year', 'month', 'user'])
+export class Expenses extends BaseEntity {
+	@Column()
+	year: number;
 
 	@Column()
-	cost: number;
+	month: number;
 
-	@ManyToOne(()=>Users, (user)=>user.expenses)
+	@Column({ default: 0 })
+	totalCost: number;
+
+	@ManyToOne(() => Users, (user) => user.expenses)
 	user: Users;
 
-	@JoinColumn()
-	@ManyToOne(() => Category, (category) => category.expenses, { onDelete: 'CASCADE' })
-	category: Category;
+	@OneToMany(() => ExpenseCategory, (expenseCategory) => expenseCategory.expense)
+	expenseCategory: ExpenseCategory[];
 }

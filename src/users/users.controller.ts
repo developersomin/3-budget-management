@@ -4,15 +4,15 @@ import { CreateUserDto } from './dto/create-user.dto';
 
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+	constructor(private readonly usersService: UsersService) {}
 
-  @Post('/login')
-  login(@Body('nickname') nickname: string, @Body('password') password: string) {
-    return this.usersService.login({ nickname, password });
-  }
-  @Post('/signup')
-  signup(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.signup(createUserDto);
-  }
+	@Post('/login')
+	login(@Body('nickname') nickname: string, @Body('password') password: string) {
+		return this.usersService.login({ nickname, password });
+	}
 
+	@Post('/signup')
+	signup(@Body() createUserDto: CreateUserDto) {
+		return this.usersService.signup(createUserDto);
+	}
 }
