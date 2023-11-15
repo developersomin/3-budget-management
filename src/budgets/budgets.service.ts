@@ -46,7 +46,7 @@ export class BudgetsService {
 		});
 	}
 
-	updateTotalAmount(budget: Budgets, totalAmount: number) {
+	updateTotalAmount(budget: Budgets, totalAmount: number): Promise<Budgets> {
 		return this.budgetsRepository.save({
 			...budget,
 			totalAmount,

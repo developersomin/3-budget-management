@@ -7,10 +7,10 @@ import { Repository } from 'typeorm';
 export class CategoryService {
 	constructor(@InjectRepository(Category) private readonly categoryRepository: Repository<Category>) {}
 
-	createCategory(name) {
+	createCategory(name: string): Promise<Category> {
 		return this.categoryRepository.save({ name });
 	}
-	findCategory(name) {
+	findCategory(name: string): Promise<Category> {
 		return this.categoryRepository.findOne({ where: { name } });
 	}
 
