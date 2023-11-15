@@ -9,21 +9,27 @@ import { IGiveToken } from '../auth/interface/auth-service.interface';
 
 @Injectable()
 export class UsersService {
-	constructor(@InjectRepository(Users) private readonly usersRepository: Repository<Users>, private readonly authService: AuthService) {
-	}
+	constructor(
+		@InjectRepository(Users) private readonly usersRepository: Repository<Users>,
+		private readonly authService: AuthService,
+	) {}
+
 	findOne(options: FindOptionsWhere<Users>): Promise<Users> {
-		return this.usersRepository.findOne({ where: options,relations:['budgets']});
+		return this.usersRepository.findOne({ where: options, relations: ['budgets'] });
 	}
+
 	//find 함수는 leftjoin으로 budget 없는 것도 모두 출력됨
 	//그러므로 쿼리빌더를 사용하여 이너조인을 사용
-	findUsersWithBudgets() {
-		return this.usersRepository.createQueryBuilder('users')
+	findUsersWithBudgets(): Promise<Users[]> {
+		return this.usersRepository
+			.createQueryBuilder('users')
 			.innerJoinAndSelect('users.budgets', 'budgets')
-			.innerJoinAndSelect('budgets.category', 'category')
+			.innerJoinAndSelect('budgets.budgetCategory', 'budgetCategory')
+			.innerJoinAndSelect('budgetCategory.category', 'category')
 			.getMany();
 	}
 
-	async signup(createUserDto:CreateUserDto):Promise<Users>{
+	async signup(createUserDto: CreateUserDto): Promise<Users> {
 		const { nickname, password } = createUserDto;
 		const findUser = await this.findOne({ nickname });
 		if (findUser) {
@@ -38,7 +44,6 @@ export class UsersService {
 
 		return newUser;
 	}
-
 	async login(user: Pick<Users, 'nickname' | 'password'>): Promise<IGiveToken> {
 		const findUser = await this.findOne({ nickname: user.nickname });
 		if (!findUser) {

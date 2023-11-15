@@ -1,16 +1,26 @@
-import { IsDate, IsNotEmpty, IsNumber, IsString } from "class-validator";
+import { IsDate, IsNotEmpty, IsNumber, IsOptional, IsString } from "class-validator";
+import { Transform } from "class-transformer";
 
 export class QuerySearchDto {
-  @IsDate()
-  @IsNotEmpty()
-  startDate: Date;
-  @IsDate()
-  @IsNotEmpty()
-  endDate: Date;
-  @IsString()
-  categoryId: string;
-  @IsNumber()
-  minCost: number;
-  @IsNumber()
-  maxCost: number;
+	@Transform(({ value }) => new Date(value), { toClassOnly: true })
+	@IsDate()
+	@IsNotEmpty()
+	startDate: Date;
+
+	@Transform(({ value }) => new Date(value), { toClassOnly: true })
+	@IsDate()
+	@IsNotEmpty()
+	endDate: Date;
+
+	@IsString()
+	@IsOptional()
+	categoryId: string;
+
+	@IsNumber()
+	@IsOptional()
+	minCost: number;
+
+	@IsNumber()
+	@IsOptional()
+	maxCost: number;
 }

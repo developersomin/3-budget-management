@@ -2,6 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Users } from '../users/entity/users.entity';
 import { IGiveToken, IVerifyToken } from './interface/auth-service.interface';
+
 @Injectable()
 export class AuthService {
 	constructor(private readonly jwtService: JwtService) {}
@@ -21,7 +22,6 @@ export class AuthService {
 	 *  - refresh 토큰이 만료 시 는 원칙상으로 다시 로그인해서 accessToken 과 refreshToke 을 받아야한다.
 	 *  - rotateToken() : accessToken 만료시 /auth/token/refresh 요청해서 재발급 받는다.
 	 **/
-
 	signToken(user: Pick<Users, 'nickname' | 'id'>, isRefreshToken: boolean): string {
 		const payload = {
 			sub: user.id,
@@ -34,6 +34,7 @@ export class AuthService {
 			expiresIn: isRefreshToken ? 7200 : 600,
 		});
 	}
+
 	giveToken(user: Pick<Users, 'nickname' | 'id'>): IGiveToken {
 		return {
 			accessToken: this.signToken(user, false),
@@ -81,3 +82,4 @@ export class AuthService {
 		);
 	}
 }
+

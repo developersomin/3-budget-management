@@ -14,3 +14,5 @@ export abstract class BaseEntity {
 	@DeleteDateColumn()
 	deletedAt: Date;
 }
+
+

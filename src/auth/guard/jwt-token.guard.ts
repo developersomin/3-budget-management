@@ -21,7 +21,6 @@ export class BearerTokenGuard implements CanActivate {
 		req.user = user;
 		req.token = token;
 		req.tokenType = result.type;
-
 		return true;
 	}
 }
@@ -36,7 +35,6 @@ export class AccessTokenGuard extends BearerTokenGuard {
 		if (req.tokenType !== 'access') {
 			throw new UnauthorizedException('Access Token 이 아닙니다.');
 		}
-
 		return true;
 	}
 }
@@ -51,7 +49,6 @@ export class RefreshTokenGuard extends BearerTokenGuard {
 		if (req.tokenType !== 'refresh') {
 			throw new UnauthorizedException('Refresh Token이 아닙니다.');
 		}
-
 		return true;
 	}
 }
