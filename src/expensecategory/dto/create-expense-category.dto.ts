@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from "class-validator";
+import { IsBoolean, IsNotEmpty, IsNumber, IsOptional, IsString, Max, Min } from 'class-validator';
 
 export class CreateExpenseCategoryDto {
 	@IsNotEmpty({ message: 'year 는 필수 입력 필드입니다.' })
@@ -11,6 +11,10 @@ export class CreateExpenseCategoryDto {
 	@Min(1, { message: '1~12 숫자를 입력하세요' })
 	@Max(12, { message: '1~12 숫자를 입력하세요' })
 	month: number;
+
+	@IsBoolean()
+	@IsOptional()
+	isExclude: boolean;
 
 	@IsString()
 	@IsOptional()

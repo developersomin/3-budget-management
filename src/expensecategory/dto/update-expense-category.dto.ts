@@ -1,4 +1,4 @@
-import {  IsNumber, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class UpdateExpenseCategoryDto {
 	@IsString()
@@ -8,6 +8,10 @@ export class UpdateExpenseCategoryDto {
 	@IsNumber()
 	@IsOptional()
 	cost: number;
+
+	@IsBoolean()
+	@IsOptional()
+	isExclude: boolean;
 
 	@IsString()
 	@IsOptional()

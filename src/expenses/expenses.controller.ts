@@ -15,4 +15,9 @@ export class ExpensesController {
 	findExpenses(@User('id') userId: string, @Query() querySearchDto: QuerySearchDto): Promise<ICategoryByTotalCost> {
 		return this.expensesService.findExpenses(querySearchDto, userId);
 	}
+
+	@Get('/guide')
+	expenseGuide(@User('id')userId:string){
+		return this.expensesService.expenseGuide(userId);
+	}
 }

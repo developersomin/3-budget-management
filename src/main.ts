@@ -1,9 +1,12 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from "@nestjs/common";
+import { TransactionInterceptor } from './commons/interceptor/transaction.interceptor';
+import { DataSource } from 'typeorm';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+    DataSource
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,        //dto 정의된 타입외 값은 허용하지 않는다.

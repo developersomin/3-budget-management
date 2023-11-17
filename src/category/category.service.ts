@@ -1,14 +1,20 @@
 import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './entity/category.entity';
-import { Repository } from 'typeorm';
+import { QueryRunner, Repository } from 'typeorm';
+import { BudgetCategory } from '../budgetcategory/entity/budgets-category.entity';
 
 @Injectable()
 export class CategoryService {
 	constructor(@InjectRepository(Category) private readonly categoryRepository: Repository<Category>) {}
 
-	createCategory(name: string): Promise<Category> {
-		return this.categoryRepository.save({ name });
+	getRepository(qr?: QueryRunner) {
+		return qr ? qr.manager.getRepository<Category>(Category) : this.categoryRepository;
+	}
+
+	createCategory(name: string,qr?:QueryRunner): Promise<Category> {
+		const repository = this.getRepository(qr);
+		return repository.save({ name });
 	}
 	findCategory(name: string): Promise<Category> {
 		return this.categoryRepository.findOne({ where: { name } });
