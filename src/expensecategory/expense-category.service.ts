@@ -7,7 +7,6 @@ import { ExpensesService } from "../expenses/expenses.service";
 import { CategoryService } from "../category/category.service";
 import { UpdateExpenseCategoryDto } from "./dto/update-expense-category.dto";
 import { Category } from "../category/entity/category.entity";
-import { BudgetCategory } from '../budgetcategory/entity/budgets-category.entity';
 
 @Injectable()
 export class ExpenseCategoryService {
@@ -47,7 +46,7 @@ export class ExpenseCategoryService {
 				id: category.id,
 			},
 		});
-		await this.expensesService.updateTotalCostExpense(expense, expense.totalCost + cost, qr);
+		//await this.expensesService.updateTotalCostExpense(expense, expense.totalCost + cost, qr);
 		return result;
 	}
 
@@ -95,8 +94,8 @@ export class ExpenseCategoryService {
 		}
 		const expenseId = expenseCategory.expense.id;
 		const expense = await this.expensesService.getExpense(expenseId);
-		const differCost = expenseCategory.cost - cost; //500 - 400
-		await this.expensesService.updateTotalCostExpense(expense, expense.totalCost - differCost, qr);
+		//const differCost = expenseCategory.cost - cost; //500 - 400
+		//await this.expensesService.updateTotalCostExpense(expense, expense.totalCost - differCost, qr);
 		return result;
 	}
 
@@ -108,7 +107,7 @@ export class ExpenseCategoryService {
 		}
 		const expenseId = expenseCategory.expense.id;
 		const expense = await this.expensesService.getExpense(expenseId);
-		await this.expensesService.updateTotalCostExpense(expense, expense.totalCost - expenseCategory.cost, qr);
+		//await this.expensesService.updateTotalCostExpense(expense, expense.totalCost - expenseCategory.cost, qr);
 		const result = await repository.softDelete({ id: expenseCategoryId });
 		return result.affected ? true : false;
 	}

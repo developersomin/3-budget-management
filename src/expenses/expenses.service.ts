@@ -46,13 +46,13 @@ export class ExpensesService {
 		});
 	}
 
-	updateTotalCostExpense(expense: Expenses, totalCost: number, qr?: QueryRunner): Promise<Expenses> {
+/*	updateTotalCostExpense(expense: Expenses, totalCost: number, qr?: QueryRunner): Promise<Expenses> {
 		const repository = this.getRepository(qr);
 		return repository.save({
 			...expense,
 			totalCost,
 		});
-	}
+	}*/
 
 	getExpense(expenseId: string): Promise<Expenses> {
 		return this.expensesRepository.findOne({ where: { id: expenseId }, relations: ['expenseCategory'] });

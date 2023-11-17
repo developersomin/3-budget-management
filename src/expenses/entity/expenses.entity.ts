@@ -12,8 +12,8 @@ export class Expenses extends BaseEntity {
 	@Column()
 	month: number;
 
-	@Column({ default: 0 })
-	totalCost: number;
+	/*@Column({ default: 0 })
+	totalCost: number;*/
 
 	@ManyToOne(() => Users, (user) => user.expenses)
 	user: Users;
