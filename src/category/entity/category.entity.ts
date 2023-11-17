@@ -8,7 +8,7 @@ import { ExpenseCategory } from "../../expensecategory/entity/expenses-category.
 
 @Entity()
 export class Category extends BaseEntity {
-	@Column()
+	@Column({ unique: true })
 	name: string;
 
 	@OneToMany(() => BudgetCategory, (budgetCategory) => budgetCategory.category)

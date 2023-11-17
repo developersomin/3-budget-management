@@ -1,8 +1,7 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './entity/category.entity';
 import { QueryRunner, Repository } from 'typeorm';
-import { BudgetCategory } from '../budgetcategory/entity/budgets-category.entity';
 
 @Injectable()
 export class CategoryService {
