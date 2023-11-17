@@ -1,7 +1,7 @@
 import { Controller, Get, Query, UseGuards } from "@nestjs/common";
 import { ExpensesService } from './expenses.service';
 import { AccessTokenGuard } from "../auth/guard/jwt-token.guard";
-import { User } from "../users/decorator/users.decorator";
+import { User } from "../commons/decorator/users.decorator";
 import { QuerySearchDto } from "./dto/query-search.dto";
 import { ICategoryByTotalCost } from "./interface/expenses-service.interface";
 

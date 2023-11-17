@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext, InternalServerErrorException } from '@nestjs/common';
-import { Users } from '../entity/users.entity';
+import { Users } from '../../users/entity/users.entity';
 
 export const User = createParamDecorator((data: keyof Users | undefined, context: ExecutionContext) => {
 	const req = context.switchToHttp().getRequest();

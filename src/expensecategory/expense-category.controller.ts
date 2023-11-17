@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards, UseInterceptors } from '@nestjs/common';
 import { ExpenseCategoryService } from './expense-category.service';
-import { User } from "../users/decorator/users.decorator";
+import { User } from "../commons/decorator/users.decorator";
 import { CreateExpenseCategoryDto } from "./dto/create-expense-category.dto";
 import { ExpenseCategory } from "./entity/expenses-category.entity";
 import { AccessTokenGuard } from "../auth/guard/jwt-token.guard";

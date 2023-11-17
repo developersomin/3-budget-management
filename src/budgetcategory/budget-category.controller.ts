@@ -1,7 +1,7 @@
 import { Body, Controller, Post, UseGuards, UseInterceptors } from '@nestjs/common';
 import { BudgetCategoryService } from './budget-category.service';
 import { AccessTokenGuard } from "../auth/guard/jwt-token.guard";
-import { User } from "../users/decorator/users.decorator";
+import { User } from "../commons/decorator/users.decorator";
 import { BudgetCategory } from "./entity/budgets-category.entity";
 import { CreateCategoryBudgetDto } from "./dto/create-category-budget.dto";
 import { TransactionInterceptor } from '../commons/interceptor/transaction.interceptor';
