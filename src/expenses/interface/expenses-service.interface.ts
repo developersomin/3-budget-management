@@ -8,9 +8,11 @@ export interface ICalculateDate {
   day: number;
   lastDayCount: number;
   firstDay: Date;
-  yesterday: Date;
   today: Date;
   now: Date;
+  lastMonth:Date;
+  lastMonthFirstDay:Date;
+  aWeekAgo:Date;
 }
 
 export interface IFindExpensesQuery {
@@ -38,13 +40,18 @@ export interface IExpenseGuideResult {
   riskPercent: CategoryNameToNumberMap;
 }
 
-interface CategoryBySum{
+export interface ICategoryBySum{
   categoryName: string;
   categoryByTotalCost: number;
 }
 
 export interface ICategoryByTotalCost{
   totalCost: number;
-  categoryByTotalCost: CategoryBySum[];
+  categoryByTotalCost: ICategoryBySum[];
   expenseCategories: ExpenseCategory[];
+}
+
+export interface ICompareExpenseWithLastMonth {
+	totalPercent: number;
+	categoryPercent: CategoryNameToNumberMap;
 }

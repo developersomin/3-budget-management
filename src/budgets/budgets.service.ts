@@ -1,7 +1,7 @@
 import { forwardRef, Inject, Injectable, InternalServerErrorException } from "@nestjs/common";
 import { InjectRepository } from '@nestjs/typeorm';
 import { Budgets } from './entity/budgets.entity';
-import { Repository } from 'typeorm';
+import { QueryRunner, Repository } from 'typeorm';
 import { UsersService } from "../users/users.service";
 import { CategoryService } from "../category/category.service";
 import { DesignBudgetDto } from "./dto/design-budget.dto";
@@ -20,8 +20,24 @@ export class BudgetsService {
 		@Inject(forwardRef(() => BudgetCategoryService)) private readonly budgetCategoryService: BudgetCategoryService,
 	) {}
 
-	getBudget(budgetId: string) {
+	getRepository(qr?: QueryRunner): Repository<Budgets> {
+		return qr ? qr.manager.getRepository<Budgets>(Budgets) : this.budgetsRepository;
+	}
+
+	getBudget(budgetId: string): Promise<Budgets> {
 		return this.budgetsRepository.findOne({ where: { id: budgetId }, relations: ['budgetCategory'] });
+	}
+
+	findBudget(year: number, month: number, userId: string): Promise<Budgets> {
+		return this.budgetsRepository.findOne({
+			where: {
+				year,
+				month,
+				user: {
+					id: userId,
+				},
+			},
+		});
 	}
 
 	findByMonthAndUserId(budgets: Pick<Budgets, 'year' | 'month'>, userId: string): Promise<Budgets> {
@@ -36,25 +52,30 @@ export class BudgetsService {
 			.getOne();
 	}
 
-	createBudget(budgets: Pick<Budgets, 'year' | 'month'>, userId: string): Promise<Budgets> {
-		return this.budgetsRepository.save({
+	async createBudget(budgets: Pick<Budgets, 'year' | 'month'>, userId: string, qr?: QueryRunner): Promise<Budgets> {
+		const repository = this.getRepository(qr);
+		const result = await repository.save({
 			year: budgets.year,
 			month: budgets.month,
 			user: {
 				id: userId,
 			},
 		});
+		return result;
 	}
 
-	updateTotalAmount(budget: Budgets, totalAmount: number) {
-		return this.budgetsRepository.save({
+	updateTotalAmount(budget: Budgets, totalAmount: number, qr?: QueryRunner): Promise<Budgets> {
+		const repository = this.getRepository(qr);
+		return repository.save({
 			...budget,
 			totalAmount,
 		});
 	}
 
-	calcProperBudget(budget: Budgets, todayProperAmount: number): ICalcProperBudget {
+	calcProperBudget(budget: Budgets, lastDayCount: number, day: number): ICalcProperBudget {
 		const totalAmount = budget.totalAmount;
+		const todayProperAmount = (totalAmount / lastDayCount) * day;
+
 		const budgetCategories = budget.budgetCategory;
 		const todayBudgetByCategory = {};
 		for (const budgetCategory of budgetCategories) {
@@ -76,7 +97,7 @@ export class BudgetsService {
 	 * 8.나의 총 예산 금액에 비율을 곱하여 예산 설계 금액을 추천해줌
 	 * 9.만원 단위로 반올림 했기 때문에 차이가 조금 있음 이 부분은 차이난 만큼 기타에서 빼주고 더해줌
 	 */
-	async designBudget(dto: DesignBudgetDto, userId: string): Promise<BudgetCategory[]> {
+	async designBudget(dto: DesignBudgetDto, userId: string, qr: QueryRunner): Promise<BudgetCategory[]> {
 		const { year, month, totalAmount } = dto;
 		const users = await this.findBudgetedUser();
 		const budgetRatio = await this.sumRatioUsers(users);
@@ -101,6 +122,7 @@ export class BudgetsService {
 					amount: budgetRatio[key],
 				},
 				userId,
+				qr,
 			);
 		}
 		const budget = await this.findByMonthAndUserId({ year, month }, userId);

@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, OneToMany, Unique } from "typeorm";
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, Unique } from 'typeorm';
 import { Users } from '../../users/entity/users.entity';
 import { BaseEntity } from '../../commons/entity/base.entity';
 import { BudgetCategory } from "../../budgetcategory/entity/budgets-category.entity";

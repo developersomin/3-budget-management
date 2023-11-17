@@ -11,6 +11,9 @@ export class ExpenseCategory extends BaseEntity {
 	@Column()
 	cost: number;
 
+	@Column({ default: false })
+	isExclude: boolean;
+
 	@ManyToOne(() => Expenses, (expense) => expense.expenseCategory)
 	expense: Expenses;
 

@@ -1,15 +1,17 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from "@nestjs/typeorm";
 import { Expenses } from "./entity/expenses.entity";
-import { Repository } from "typeorm";
+import { QueryRunner, Repository } from 'typeorm';
 import { BudgetsService } from "../budgets/budgets.service";
 import {
-  ICalculateDate, ICategoryByTotalCost,
-  IExpenseGuideResult,
-  IFindExpensesQuery,
-  IUsedUntilTodayExpense
-} from "./interface/expenses-service.interface";
+	ICalculateDate, ICategoryBySum, ICategoryByTotalCost, ICompareExpenseWithLastMonth,
+	IExpenseGuideResult,
+	IFindExpensesQuery,
+	IUsedUntilTodayExpense,
+} from './interface/expenses-service.interface';
 import { QuerySearchDto } from "./dto/query-search.dto";
+import { RecommendEnum } from './enum/recommend.enum';
+import { ExpenseCategory } from '../expensecategory/entity/expenses-category.entity';
 
 @Injectable()
 export class ExpensesService {
@@ -17,9 +19,13 @@ export class ExpensesService {
 		@InjectRepository(Expenses) private readonly expensesRepository: Repository<Expenses>,
 		private readonly budgetsService: BudgetsService,
 	) {}
+	getRepository(qr?: QueryRunner): Repository<Expenses> {
+		return qr ? qr.manager.getRepository<Expenses>(Expenses) : this.expensesRepository;
+	}
 
-	createExpense(expenses: Pick<Expenses, 'year' | 'month'>, userId: string): Promise<Expenses> {
-		return this.expensesRepository.save({
+	createExpense(expenses: Pick<Expenses, 'year' | 'month'>, userId: string, qr?: QueryRunner): Promise<Expenses> {
+		const repository = this.getRepository(qr);
+		return repository.save({
 			year: expenses.year,
 			month: expenses.month,
 			user: {
@@ -40,8 +46,9 @@ export class ExpensesService {
 		});
 	}
 
-	updateTotalCostExpense(expense: Expenses, totalCost: number) {
-		return this.expensesRepository.save({
+	updateTotalCostExpense(expense: Expenses, totalCost: number, qr?: QueryRunner): Promise<Expenses> {
+		const repository = this.getRepository(qr);
+		return repository.save({
 			...expense,
 			totalCost,
 		});
@@ -91,11 +98,22 @@ export class ExpensesService {
 			minCost,
 			maxCost,
 		});
-		const totalSum = await qb.select('SUM(expenseCategory.cost) AS totalCost').groupBy('users.id').getRawOne();
+		const totalSum = await qb
+			.select('SUM(expenseCategory.cost) AS totalCost')
+			.andWhere('expenseCategory.isExclude = false')
+			.groupBy('users.id')
+			.getRawOne();
 		return totalSum ? totalSum.totalCost : 0;
 	}
 
-	async searchCategoryByTotalCost({ userId, startDate, endDate, categoryId, minCost, maxCost }) {
+	async searchCategoryByTotalCost({
+		userId,
+		startDate,
+		endDate,
+		categoryId,
+		minCost,
+		maxCost,
+	}): Promise<ICategoryBySum[]> {
 		const qb = this.expensesRepository.createQueryBuilder('expenses');
 		this.findExpensesQuery({
 			qb: qb,
@@ -138,23 +156,29 @@ export class ExpensesService {
 		const day = now.getDay();
 		const lastDayCount = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDay();
 		const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-		const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDay() - 1);
-		const today = new Date(now.getFullYear(), now.getMonth(), now.getDay());
+		const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDay() + 1);
+		const lastMonthFirstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+		const today = new Date(now.getFullYear(), now.getMonth(), now.getDay() + 1);
+		const aWeekAgo = new Date();
+		aWeekAgo.setDate(day - 6);
+		aWeekAgo.setHours(0, 0, 0, 0);
 		return {
 			year,
 			month,
 			day,
 			lastDayCount,
 			firstDay,
-			yesterday,
 			today,
 			now,
+			lastMonth,
+			lastMonthFirstDay,
+			aWeekAgo,
 		};
 	}
 
 	async expenseGuide(userId: string): Promise<IExpenseGuideResult> {
 		const { year, month, day, lastDayCount, firstDay, now } = this.calcDate();
-      const { totalTodayCost, ...todayExpenseSumByCategory } = await this.usedUntilTodayExpense(
+		const { totalTodayCost, ...todayExpenseSumByCategory } = await this.usedUntilTodayExpense(
 			userId,
 			firstDay,
 			now,
@@ -163,8 +187,11 @@ export class ExpensesService {
 		);
 		const budget = await this.budgetsService.findByMonthAndUserId({ year, month }, userId);
 		const totalAmount = budget.totalAmount;
-		const todayProperAmount = (totalAmount / lastDayCount) * day;
-		const todayBudgetByCategory = this.budgetsService.calcProperBudget(budget, todayProperAmount);
+		const { todayProperAmount, ...todayBudgetByCategory } = this.budgetsService.calcProperBudget(
+			budget,
+			lastDayCount,
+			day,
+		);
 		const riskPercent = {};
 		for (const key in todayBudgetByCategory) {
 			riskPercent[key] = Math.round(todayExpenseSumByCategory[key] / todayBudgetByCategory[key]);
@@ -177,7 +204,23 @@ export class ExpensesService {
 		};
 	}
 
-	async usedUntilTodayExpense(userId: string, firstDay, now, year, month): Promise<IUsedUntilTodayExpense> {
+	async usedUntilTodayExpense(
+		userId: string,
+		firstDay: Date,
+		now: Date,
+		year: number,
+		month: number,
+	): Promise<IUsedUntilTodayExpense> {
+		const budget = await this.budgetsService.findByMonthAndUserId(
+			{
+				year,
+				month,
+			},
+			userId,
+		);
+		if (!budget) {
+			throw new InternalServerErrorException('설정된 예산이 없습니다.');
+		}
 		const qb = this.expensesRepository.createQueryBuilder('expenses');
 		this.findExpensesQuery({
 			qb,
@@ -188,13 +231,6 @@ export class ExpensesService {
 			minCost: null,
 			maxCost: null,
 		});
-		const budget = await this.budgetsService.findByMonthAndUserId(
-			{
-				year,
-				month,
-			},
-			userId,
-		);
 		const todayExpense = await qb.getOne();
 		const expenseCategories = todayExpense.expenseCategory;
 		const todayExpenseSumByCategory = {};
@@ -214,5 +250,133 @@ export class ExpensesService {
 			totalTodayCost += cost;
 		}
 		return { ...todayExpenseSumByCategory, totalTodayCost };
+	}
+
+	async recommendTodayExpense(userId: string) {
+		const { firstDay, year, month, day, lastDayCount, now } = this.calcDate();
+		const budget = await this.budgetsService.findByMonthAndUserId({ year, month }, userId);
+		const { todayProperAmount, ...todayBudgetByCategory } = this.budgetsService.calcProperBudget(
+			budget,
+			lastDayCount,
+			day,
+		);
+		const budgetCategories = budget.budgetCategory;
+		if (!budget) {
+			throw new InternalServerErrorException('설정된 예산이 없습니다.');
+		}
+		const { totalTodayCost, ...todayExpenseSumByCategory } = await this.usedUntilTodayExpense(
+			userId,
+			firstDay,
+			now,
+			year,
+			month,
+		);
+		const restTodayBudgetAmount = {};
+		let todayTotalProperCost = 0;
+		for (const budgetCategory of budgetCategories) {
+			const categoryName = budgetCategory.category.name;
+			const todayProperCost =
+				Math.round(
+					(budgetCategory.amount - todayExpenseSumByCategory[categoryName]) / (lastDayCount - day + 1) / 100,
+				) * 100;
+			if (todayProperCost < 3000) {
+				restTodayBudgetAmount[categoryName] = 3000;
+			} else {
+				restTodayBudgetAmount[categoryName] = todayProperCost;
+			}
+			todayTotalProperCost += todayProperCost;
+		}
+		let message: RecommendEnum;
+		if (todayProperAmount * 1.2 < todayTotalProperCost) {
+			message = RecommendEnum.GOOD;
+		} else if (todayProperAmount * 0.8 < todayTotalProperCost && todayProperAmount * 1.2 >= todayTotalProperCost) {
+			message = RecommendEnum.SOSO;
+		} else if (todayProperAmount * 0.5 < todayTotalProperCost && todayProperAmount * 0.8 >= todayTotalProperCost) {
+			message = RecommendEnum.BAD;
+		} else {
+			message = RecommendEnum.DIE;
+		}
+	}
+
+	async compareExpenseWithLastMonth(userId: string): Promise<ICompareExpenseWithLastMonth> {
+		const { lastMonthFirstDay, lastMonth, firstDay, today } = this.calcDate();
+		const qb = this.expensesRepository.createQueryBuilder('expenses');
+		const lastMonthCategoryByCost = await this.searchCategoryByTotalCost({
+			userId,
+			startDate: lastMonthFirstDay,
+			endDate: lastMonth,
+			categoryId: null,
+			minCost: null,
+			maxCost: null,
+		});
+		const lastMonthTotalCost = await this.searchTotalCost({
+			userId,
+			startDate: lastMonthFirstDay,
+			endDate: lastMonth,
+			categoryId: null,
+			minCost: null,
+			maxCost: null,
+		});
+		const nowCategoryByCost = await this.searchCategoryByTotalCost({
+			userId,
+			startDate: firstDay,
+			endDate: today,
+			categoryId: null,
+			minCost: null,
+			maxCost: null,
+		});
+		const nowTotalCost = await this.searchTotalCost({
+			userId,
+			startDate: firstDay,
+			endDate: today,
+			categoryId: null,
+			minCost: null,
+			maxCost: null,
+		});
+		//categoryName        categoryByTotalCost
+		const result = {
+			totalPercent: nowTotalCost / lastMonthTotalCost,
+			categoryPercent: {},
+		};
+		for (const category of lastMonthCategoryByCost) {
+			result.categoryPercent[category.categoryName] = 1 / category.categoryByTotalCost;
+		}
+		for (const category of nowCategoryByCost) {
+			if (result.categoryPercent[category.categoryName]) {
+				result.categoryPercent[category.categoryName] =
+					category.categoryByTotalCost * result.categoryPercent[category.categoryName];
+			} else {
+				result.categoryPercent[category.categoryName] = category.categoryByTotalCost;
+			}
+		}
+		return result;
+	}
+	async compareExpenseWithLastWeek(userId: string): Promise<number> {
+		const { aWeekAgo, today } = this.calcDate();
+		const beforeToday = new Date(today.getFullYear(), today.getMonth(), today.getDay() - 1);
+		const beforeAWeekAgo = new Date(aWeekAgo.getFullYear(), aWeekAgo.getMonth(), aWeekAgo.getDay() - 1);
+		const qb = this.expensesRepository.createQueryBuilder('expenses');
+
+		const lastMonthTotalCost = await this.searchTotalCost({
+			userId,
+			startDate: beforeAWeekAgo,
+			endDate: aWeekAgo,
+			categoryId: null,
+			minCost: null,
+			maxCost: null,
+		});
+
+		const nowTotalCost = await this.searchTotalCost({
+			userId,
+			startDate: beforeToday,
+			endDate: today,
+			categoryId: null,
+			minCost: null,
+			maxCost: null,
+		});
+
+		const totalPercent = nowTotalCost / lastMonthTotalCost;
+
+		return totalPercent;
 	}
 }

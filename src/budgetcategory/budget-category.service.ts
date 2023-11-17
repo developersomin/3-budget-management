@@ -1,7 +1,7 @@
-import { forwardRef, Inject, Injectable } from "@nestjs/common";
+import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from "@nestjs/typeorm";
 import { BudgetCategory } from "./entity/budgets-category.entity";
-import { Repository } from "typeorm";
+import { DataSource, QueryRunner, Repository } from 'typeorm';
 import { CreateCategoryBudgetDto } from "./dto/create-category-budget.dto";
 import { CategoryService } from "../category/category.service";
 import { BudgetsService } from "../budgets/budgets.service";
@@ -12,20 +12,42 @@ export class BudgetCategoryService {
 		@InjectRepository(BudgetCategory) private readonly budgetCategoryRepository: Repository<BudgetCategory>,
 		private readonly categoryService: CategoryService,
 		@Inject(forwardRef(() => BudgetsService)) private readonly budgetsService: BudgetsService,
+		private readonly dateSource: DataSource,
 	) {}
 
-	async findByBudgetAndCategory(budgetId: string, categoryId: string): Promise<BudgetCategory> {
-		const budgetCategory = await this.budgetCategoryRepository.findOne({
-			where: {
-				budget: { id: budgetId },
-				category: { id: categoryId },
-			},
-		});
-		return budgetCategory;
+	getRepository(qr?: QueryRunner): Repository<BudgetCategory> {
+		return qr ? qr.manager.getRepository<BudgetCategory>(BudgetCategory) : this.budgetCategoryRepository;
 	}
 
-	createBudgetCategory(amount: number, budgetId: string, categoryId: string) {
-		return this.budgetCategoryRepository.save({
+	getBudgetCategory(budgetCategoryId: string) {
+		return this.budgetCategoryRepository.findOne({
+			where: {
+				id: budgetCategoryId,
+			},
+		});
+	}
+
+	findByBudgetIdAndCategoryId(budgetId:string, categoryId:string){
+		return this.budgetCategoryRepository.findOne({
+			where: {
+				budget: {
+					id: budgetId,
+				},
+				category: {
+					id: categoryId,
+				},
+			},
+		});
+	}
+
+	async createBudgetCategory(
+		amount: number,
+		budgetId: string,
+		categoryId: string,
+		qr?: QueryRunner,
+	): Promise<BudgetCategory> {
+		const repository = this.getRepository(qr);
+		const budgetCategory = repository.create({
 			amount,
 			budget: {
 				id: budgetId,
@@ -34,13 +56,34 @@ export class BudgetCategoryService {
 				id: categoryId,
 			},
 		});
+		return repository.save(budgetCategory);
 	}
 
-	updateBudgetCategory(budgetCategory: BudgetCategory, amount: number) {
-		return this.budgetCategoryRepository.save({
-			...budgetCategory,
-			amount,
-		});
+	async updateBudgetCategory(
+		budgetCategoryId: string,
+		qr: QueryRunner,
+		amount: number,
+		categoryId: string,
+	): Promise<BudgetCategory> {
+		const repository = this.getRepository(qr);
+		const budgetCategory = await this.getBudgetCategory(budgetCategoryId);
+		if (!budgetCategory) {
+			throw new BadRequestException('수정할 예산 카테고리를 찾지 못했습니다.');
+		}
+		if (categoryId) {
+			return repository.save({
+				...budgetCategory,
+				amount,
+				category: {
+					id: categoryId,
+				},
+			});
+		} else {
+			return repository.save({
+				...budgetCategory,
+				amount,
+			});
+		}
 	}
 
 	/**
@@ -51,30 +94,29 @@ export class BudgetCategoryService {
 	 * 4.만약 카테고리 이름이 없으면 생성한다.
 	 * 5.위 사항을 다 진행하면 카테고리 ID와 예산 ID를 가져 올 수 있다.
 	 * 6. 카테고리 ID와 예산 ID 로 카테고리 별 예산이 존재하는지 확인한다.
-	 * 7. 만약 없으면 생성하고 리턴한다.
-	 * 8. 있으면 amount 수정하고 카테고리별 amount 를 다 더해 budget의 totalamount를 계산한다.
-	 * 9.
+	 * 7. 있으면 error (수정하는 메소드를 실행)
+	 * 8. 만약 없으면 생성하고 리턴한다.
 	 */
-	async budgetByCategory(createCategoryBudgetDto: CreateCategoryBudgetDto, userId: string): Promise<BudgetCategory> {
+	async budgetByCategory(
+		createCategoryBudgetDto: CreateCategoryBudgetDto,
+		userId: string,
+		qr: QueryRunner,
+	): Promise<BudgetCategory> {
 		const { year, month, categoryName, amount } = createCategoryBudgetDto;
-		let budget = await this.budgetsService.findByMonthAndUserId({ year, month }, userId);
+		let budget = await this.budgetsService.findBudget(year, month, userId);
 		if (!budget) {
-			budget = await this.budgetsService.createBudget({ year, month }, userId);
+			budget = await this.budgetsService.createBudget({ year, month }, userId, qr);
 		}
 		let category = await this.categoryService.findCategory(categoryName);
 		if (!category) {
-			category = await this.categoryService.createCategory(categoryName);
+			category = await this.categoryService.createCategory(categoryName, qr);
 		}
-		const findBudgetCategory = await this.findByBudgetAndCategory(budget.id, category.id);
-		if (!findBudgetCategory) {
-			const result = await this.createBudgetCategory(amount, budget.id, category.id);
-			await this.budgetsService.updateTotalAmount(budget, budget.totalAmount + amount);
-			return result;
-		} else {
-			const result = await this.updateBudgetCategory(findBudgetCategory, amount);
-			const differAmount = findBudgetCategory.amount - amount;
-			await this.budgetsService.updateTotalAmount(budget, budget.totalAmount - differAmount);
-			return result;
+		const findBudgetCategory = await this.findByBudgetIdAndCategoryId(budget.id, category.id);
+		if (findBudgetCategory) {
+			throw new BadRequestException("동일한 카테고리 예산이 있습니다. 변경을 원하시면 updateBudgetCategory 로 수정해주세요.")
 		}
+		const result = await this.createBudgetCategory(amount, budget.id, category.id, qr);
+		await this.budgetsService.updateTotalAmount(budget, budget.totalAmount + amount, qr);
+		return result;
 	}
 }
