@@ -1,4 +1,4 @@
-import { Body, Controller, ParseFloatPipe, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Post, UseGuards, UseInterceptors } from '@nestjs/common';
 import { BudgetsService } from './budgets.service';
 import { DesignBudgetDto } from "./dto/design-budget.dto";
 import { AccessTokenGuard } from "../auth/guard/jwt-token.guard";
@@ -6,6 +6,7 @@ import { User } from "../commons/decorator/users.decorator";
 import { BudgetCategory } from "../budgetcategory/entity/budgets-category.entity";
 import { QueryRunnerDecorator } from '../commons/decorator/query-runner.decorator';
 import { QueryRunner } from 'typeorm';
+import { TransactionInterceptor } from '../commons/interceptor/transaction.interceptor';
 
 @Controller('budgets')
 export class BudgetsController {
@@ -13,6 +14,7 @@ export class BudgetsController {
 
 	@Post('/recommend')
 	@UseGuards(AccessTokenGuard)
+	@UseInterceptors(TransactionInterceptor)
 	designBudget(
 		@Body() designBudgetDto: DesignBudgetDto,
 		@User('id') userId: string,

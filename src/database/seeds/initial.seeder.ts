@@ -4,20 +4,25 @@ import { DataSource } from 'typeorm'
 import { Category } from '../../category/entity/category.entity';
 import { ExpenseCategory } from '../../expensecategory/entity/expenses-category.entity';
 import { Expenses } from '../../expenses/entity/expenses.entity';
-
+import * as bcrypt from 'bcryptjs';
+import { Budgets } from '../../budgets/entity/budgets.entity';
+import { BudgetCategory } from '../../budgetcategory/entity/budgets-category.entity';
 export default class InitialDatabaseSeed implements Seeder {
 	async run(dataSource: DataSource, factoryManager: SeederFactoryManager): Promise<any> {
 		const usersRepository = dataSource.getRepository(Users);
 		const userData = [];
 		for (let i = 1; i < 21; i++) {
-			userData.push({ nickname: `angiwon${i}`, password: 'zxcv12345!' });
+			const hashedPassword = await bcrypt.hash('zxcv12345!', Number(process.env.HASH_SALT));
+			userData.push({ nickname: `angiwon${i}`, password: hashedPassword });
 		}
 		await usersRepository.insert(userData);
 		const users = await usersRepository.find();
+		
 		const expensesRepository = dataSource.getRepository(Expenses);
-		console.log('users완료');
-
+		const budgetsRepository = dataSource.getRepository(Budgets);
+		
 		const expenseData=[];
+		const budgetData = [];
 		for (let i = 0; i < users.length; i++) {
 			const year=2023;
 			for (let month = 9; month < 11; month++) {
@@ -28,10 +33,18 @@ export default class InitialDatabaseSeed implements Seeder {
 						id: users[i].id,
 					},
 				});
+				budgetData.push({
+					year,
+					month,
+					user: {
+						id: users[i].id,
+					},
+				});
 			}
 		}
+		await budgetsRepository.insert(budgetData);
 		await expensesRepository.insert(expenseData);
-		console.log('expenseData');
+
 		const categoryRepository = dataSource.getRepository(Category);
 		await categoryRepository.insert([
 			{ name: '식비' },
@@ -40,11 +53,44 @@ export default class InitialDatabaseSeed implements Seeder {
 			{ name: '쇼핑' },
 			{ name: '취미' },
 		]);
-		console.log('category');
 		const categories = await categoryRepository.find();
+		let budgets = await budgetsRepository.find();
 		const expenses = await expensesRepository.find();
 		const expenseCategoryRepository = dataSource.getRepository(ExpenseCategory);
+		const budgetCategoryRepository = dataSource.getRepository(BudgetCategory);
 		const expenseCategoryData=[];
+		const budgetCategoryData=[];
+		console.log(budgets.length);
+		for (let i = 0; i < budgets.length; i++) {
+			const budgetId = budgets[i].id;
+			for (let j = 0; j < categories.length; j++) {
+				const amount = Math.round(Math.floor(Math.random() * (400000 - 200000) + 200000) / 10000) * 10000;
+				const categoryId = categories[j].id;
+				budgetCategoryData.push({
+					amount,
+					budget: {
+						id: budgetId,
+					},
+					category: {
+						id: categoryId,
+					},
+				});
+			}
+		}
+		await budgetCategoryRepository.insert(budgetCategoryData);
+		budgets = await budgetsRepository.find({ relations: ['budgetCategory'] });
+		for (const budget of budgets) {
+			let totalAmount =0;
+			const budgetCategories = budget.budgetCategory;
+			for (const budgetCategory of budgetCategories) {
+				totalAmount += budgetCategory.amount;
+			}
+			await budgetsRepository.save({
+				...budget,
+				totalAmount
+			})
+		}
+		
 		for (let i = 0; i < expenses.length; i++) {
 			for (let j = 0; j < 50; j++) {
 				const cost = Math.round(Math.floor(Math.random() * (20000 - 100) + 100) / 100) * 100;
@@ -62,6 +108,5 @@ export default class InitialDatabaseSeed implements Seeder {
 			}
 		}
 		await expenseCategoryRepository.insert(expenseCategoryData);
-		console.log('우ㅏㅗㄴ료');
 	}
 }
