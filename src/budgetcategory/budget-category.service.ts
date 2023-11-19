@@ -113,10 +113,14 @@ export class BudgetCategoryService {
 		}
 		const findBudgetCategory = await this.findByBudgetIdAndCategoryId(budget.id, category.id);
 		if (findBudgetCategory) {
-			throw new BadRequestException("동일한 카테고리 예산이 있습니다. 변경을 원하시면 updateBudgetCategory 로 수정해주세요.")
+			 const result= await this.updateBudgetCategory(findBudgetCategory.id, qr, amount, category.id);
+			const differAmount = findBudgetCategory.amount - amount;
+			await this.budgetsService.updateTotalAmount(budget, budget.totalAmount - differAmount, qr);
+			return result;
+		} else{
+			const result = await this.createBudgetCategory(amount, budget.id, category.id, qr);
+			await this.budgetsService.updateTotalAmount(budget, budget.totalAmount + amount, qr);
+			return result;
 		}
-		const result = await this.createBudgetCategory(amount, budget.id, category.id, qr);
-		await this.budgetsService.updateTotalAmount(budget, budget.totalAmount + amount, qr);
-		return result;
 	}
 }

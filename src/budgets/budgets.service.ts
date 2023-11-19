@@ -1,4 +1,4 @@
-import { forwardRef, Inject, Injectable, InternalServerErrorException } from "@nestjs/common";
+import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Budgets } from './entity/budgets.entity';
 import { QueryRunner, Repository } from 'typeorm';
@@ -101,18 +101,19 @@ export class BudgetsService {
 		const { year, month, totalAmount } = dto;
 		const users = await this.findBudgetedUser();
 		const budgetRatio = await this.sumRatioUsers(users);
+		console.log(budgetRatio);
 		for (const key in budgetRatio) {
-			budgetRatio[key] = Math.round((budgetRatio[key] * totalAmount) / 10000) * 10000;
+			budgetRatio[key] = Math.floor((budgetRatio[key] * totalAmount) / 10000) * 10000;
 		}
 		let sum = 0;
 		for (let key in budgetRatio) {
 			sum += budgetRatio[key];
 		}
-		if (sum < totalAmount) {
-			budgetRatio['기타'] = budgetRatio['기타'] + (totalAmount - sum);
-		} else {
-			budgetRatio['기타'] = budgetRatio['기타'] - (sum - totalAmount);
-		}
+
+		const floorValue = totalAmount - sum;
+		const keyArray = Object.keys(budgetRatio);
+		budgetRatio[keyArray[0]] += floorValue;
+
 		for (let key in budgetRatio) {
 			await this.budgetCategoryService.budgetByCategory(
 				{
@@ -139,15 +140,17 @@ export class BudgetsService {
 
 	async getCategories(): Promise<{ [key: string]: number }> {
 		const categories = await this.categoryService.findCategories();
-		const budgetRatio = { 기타: 0 };
+		const budgetRatio = {};
 		for (const category of categories) {
 			budgetRatio[category.name] = 0;
 		}
+		budgetRatio['기타'] = 0;
 		return budgetRatio;
 	}
 
 	async sumRatioUsers(users: Users[]): Promise<{ [key: string]: number }> {
 		const budgetRatio = await this.getCategories();
+		let count=0;
 		for (const user of users) {
 			for (const budget of user.budgets) {
 				const totalAmount = budget.totalAmount;
@@ -160,11 +163,13 @@ export class BudgetsService {
 						budgetRatio['기타'] = budgetRatio['기타'] + ratio;
 					}
 				}
+				count++;
 			}
 		}
 		for (const key in budgetRatio) {
-			budgetRatio[key] = budgetRatio[key] / users.length;
-			if (budgetRatio[key] === 0) {
+			budgetRatio[key]= budgetRatio[key] / count;
+			console.log(budgetRatio[key]);
+			if(budgetRatio[key] === 0){
 				delete budgetRatio[key];
 			}
 		}
