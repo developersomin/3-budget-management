@@ -25,7 +25,7 @@ export default class InitialDatabaseSeed implements Seeder {
 		const budgetData = [];
 		for (let i = 0; i < users.length; i++) {
 			const year=2023;
-			for (let month = 9; month < 11; month++) {
+			for (let month = 10; month < 12; month++) {
 				expenseData.push({
 					year,
 					month,
@@ -60,7 +60,6 @@ export default class InitialDatabaseSeed implements Seeder {
 		const budgetCategoryRepository = dataSource.getRepository(BudgetCategory);
 		const expenseCategoryData=[];
 		const budgetCategoryData=[];
-		console.log(budgets.length);
 		for (let i = 0; i < budgets.length; i++) {
 			const budgetId = budgets[i].id;
 			for (let j = 0; j < categories.length; j++) {
@@ -93,9 +92,17 @@ export default class InitialDatabaseSeed implements Seeder {
 		
 		for (let i = 0; i < expenses.length; i++) {
 			for (let j = 0; j < 50; j++) {
-				const cost = Math.round(Math.floor(Math.random() * (20000 - 100) + 100) / 100) * 100;
+				const cost = Math.round(Math.floor(Math.random() * (13000 - 500) + 500) / 100) * 100;
 				const expenseId = expenses[i].id;
 				const categoryId = categories[Math.floor(Math.random() * categories.length)].id;
+				const now = new Date();
+				let date: number;
+				if (expenses[i].month === now.getMonth() + 1) {
+					const before = now.getDate() - 1;
+					date = Math.floor(Math.random() * before + 1);
+				} else {
+					date = Math.floor(Math.random() * (30 - 1) + 1);
+				}
 				expenseCategoryData.push({
 					cost,
 					expense: {
@@ -104,6 +111,8 @@ export default class InitialDatabaseSeed implements Seeder {
 					category: {
 						id: categoryId,
 					},
+					createdAt: new Date(expenses[i].year,expenses[i].month-1, date),
+					updatedAt: new Date(expenses[i].year,expenses[i].month-1, date),
 				});
 			}
 		}

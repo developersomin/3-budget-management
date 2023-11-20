@@ -7,9 +7,7 @@ import { CategoryService } from "../category/category.service";
 import { DesignBudgetDto } from "./dto/design-budget.dto";
 import { Users } from "../users/entity/users.entity";
 import { BudgetCategoryService } from "../budgetcategory/budget-category.service";
-import { BudgetCategory } from "../budgetcategory/entity/budgets-category.entity";
 import { ICalcProperBudget } from "./interface/budget-service.interface";
-import { Expenses } from "../expenses/entity/expenses.entity";
 
 @Injectable()
 export class BudgetsService {
@@ -28,8 +26,9 @@ export class BudgetsService {
 		return this.budgetsRepository.findOne({ where: { id: budgetId }, relations: ['budgetCategory'] });
 	}
 
-	findBudget(year: number, month: number, userId: string): Promise<Budgets> {
-		return this.budgetsRepository.findOne({
+	findBudget(year: number, month: number, userId: string, qr?: QueryRunner): Promise<Budgets> {
+		const repository = this.getRepository(qr);
+		return repository.findOne({
 			where: {
 				year,
 				month,
@@ -40,8 +39,9 @@ export class BudgetsService {
 		});
 	}
 
-	findByMonthAndUserId(budgets: Pick<Budgets, 'year' | 'month'>, userId: string): Promise<Budgets> {
-		return this.budgetsRepository
+	findByMonthAndUserId(budgets: Pick<Budgets, 'year' | 'month'>, userId: string, qr?: QueryRunner): Promise<Budgets> {
+		const repository = this.getRepository(qr);
+		return repository
 			.createQueryBuilder('budgets')
 			.innerJoinAndSelect('budgets.user', 'user')
 			.innerJoinAndSelect('budgets.budgetCategory', 'budgetCategory')
@@ -97,23 +97,20 @@ export class BudgetsService {
 	 * 8.나의 총 예산 금액에 비율을 곱하여 예산 설계 금액을 추천해줌
 	 * 9.만원 단위로 반올림 했기 때문에 차이가 조금 있음 이 부분은 차이난 만큼 기타에서 빼주고 더해줌
 	 */
-	async designBudget(dto: DesignBudgetDto, userId: string, qr: QueryRunner): Promise<BudgetCategory[]> {
+	async designBudget(dto: DesignBudgetDto, userId: string, qr: QueryRunner): Promise<Budgets> {
 		const { year, month, totalAmount } = dto;
 		const users = await this.findBudgetedUser();
 		const budgetRatio = await this.sumRatioUsers(users);
-		console.log(budgetRatio);
 		for (const key in budgetRatio) {
-			budgetRatio[key] = Math.floor((budgetRatio[key] * totalAmount) / 10000) * 10000;
+			budgetRatio[key] = Math.floor((budgetRatio[key] * totalAmount) / 1000) * 1000;
 		}
 		let sum = 0;
 		for (let key in budgetRatio) {
 			sum += budgetRatio[key];
 		}
-
 		const floorValue = totalAmount - sum;
 		const keyArray = Object.keys(budgetRatio);
 		budgetRatio[keyArray[0]] += floorValue;
-
 		for (let key in budgetRatio) {
 			await this.budgetCategoryService.budgetByCategory(
 				{
@@ -126,8 +123,8 @@ export class BudgetsService {
 				qr,
 			);
 		}
-		const budget = await this.findByMonthAndUserId({ year, month }, userId);
-		return budget.budgetCategory;
+		const budget = await this.findByMonthAndUserId({ year, month }, userId, qr);
+		return budget;
 	}
 
 	async findBudgetedUser(): Promise<Users[]> {
@@ -150,7 +147,7 @@ export class BudgetsService {
 
 	async sumRatioUsers(users: Users[]): Promise<{ [key: string]: number }> {
 		const budgetRatio = await this.getCategories();
-		let count=0;
+		let count = 0;
 		for (const user of users) {
 			for (const budget of user.budgets) {
 				const totalAmount = budget.totalAmount;
@@ -167,9 +164,9 @@ export class BudgetsService {
 			}
 		}
 		for (const key in budgetRatio) {
-			budgetRatio[key]= budgetRatio[key] / count;
+			budgetRatio[key] = budgetRatio[key] / count;
 			console.log(budgetRatio[key]);
-			if(budgetRatio[key] === 0){
+			if (budgetRatio[key] === 0) {
 				delete budgetRatio[key];
 			}
 		}

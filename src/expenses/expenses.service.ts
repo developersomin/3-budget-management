@@ -153,12 +153,12 @@ export class ExpensesService {
 		const now = new Date();
 		const year = now.getFullYear();
 		const month = now.getMonth() + 1;
-		const day = now.getDay();
-		const lastDayCount = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDay();
+		const day = now.getDate();
+		const lastDayCount = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 		const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-		const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDay() + 1);
+		const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate() + 1);
 		const lastMonthFirstDay = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-		const today = new Date(now.getFullYear(), now.getMonth(), now.getDay() + 1);
+		const today = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
 		const aWeekAgo = new Date();
 		aWeekAgo.setDate(day - 6);
 		aWeekAgo.setHours(0, 0, 0, 0);
@@ -353,8 +353,8 @@ export class ExpensesService {
 	}
 	async compareExpenseWithLastWeek(userId: string): Promise<number> {
 		const { aWeekAgo, today } = this.calcDate();
-		const beforeToday = new Date(today.getFullYear(), today.getMonth(), today.getDay() - 1);
-		const beforeAWeekAgo = new Date(aWeekAgo.getFullYear(), aWeekAgo.getMonth(), aWeekAgo.getDay() - 1);
+		const beforeToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
+		const beforeAWeekAgo = new Date(aWeekAgo.getFullYear(), aWeekAgo.getMonth(), aWeekAgo.getDate() - 1);
 		const qb = this.expensesRepository.createQueryBuilder('expenses');
 
 		const lastMonthTotalCost = await this.searchTotalCost({

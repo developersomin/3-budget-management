@@ -11,12 +11,14 @@ export class CategoryService {
 		return qr ? qr.manager.getRepository<Category>(Category) : this.categoryRepository;
 	}
 
-	createCategory(name: string,qr?:QueryRunner): Promise<Category> {
+	createCategory(name: string, qr?: QueryRunner): Promise<Category> {
 		const repository = this.getRepository(qr);
 		return repository.save({ name });
 	}
-	findCategory(name: string): Promise<Category> {
-		return this.categoryRepository.findOne({ where: { name } });
+
+	findCategory(name: string, qr?: QueryRunner): Promise<Category> {
+		const repository = this.getRepository(qr);
+		return repository.findOne({ where: { name } });
 	}
 
 	findCategories(): Promise<Category[]> {
