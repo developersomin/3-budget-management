@@ -27,8 +27,9 @@ export class BudgetCategoryService {
 		});
 	}
 
-	findByBudgetIdAndCategoryId(budgetId:string, categoryId:string){
-		return this.budgetCategoryRepository.findOne({
+	findByBudgetIdAndCategoryId(budgetId:string, categoryId:string,qr?:QueryRunner){
+		const repository = this.getRepository(qr);
+		return repository.findOne({
 			where: {
 				budget: {
 					id: budgetId,
@@ -103,19 +104,20 @@ export class BudgetCategoryService {
 		qr: QueryRunner,
 	): Promise<BudgetCategory> {
 		const { year, month, categoryName, amount } = createCategoryBudgetDto;
-		let budget = await this.budgetsService.findBudget(year, month, userId);
+		console.log(createCategoryBudgetDto);
+		let budget = await this.budgetsService.findBudget(year, month, userId,qr);
 		if (!budget) {
 			budget = await this.budgetsService.createBudget({ year, month }, userId, qr);
 		}
-		let category = await this.categoryService.findCategory(categoryName);
+		let category = await this.categoryService.findCategory(categoryName,qr);
 		if (!category) {
 			category = await this.categoryService.createCategory(categoryName, qr);
 		}
-		const findBudgetCategory = await this.findByBudgetIdAndCategoryId(budget.id, category.id);
+		const findBudgetCategory = await this.findByBudgetIdAndCategoryId(budget.id, category.id, qr);
 		if (findBudgetCategory) {
-			 const result= await this.updateBudgetCategory(findBudgetCategory.id, qr, amount, category.id);
 			const differAmount = findBudgetCategory.amount - amount;
-			await this.budgetsService.updateTotalAmount(budget, budget.totalAmount - differAmount, qr);
+			const result= await this.updateBudgetCategory(findBudgetCategory.id, qr, amount, category.id);
+			const updateBudget = await this.budgetsService.updateTotalAmount(budget, budget.totalAmount - differAmount, qr);
 			return result;
 		} else{
 			const result = await this.createBudgetCategory(amount, budget.id, category.id, qr);

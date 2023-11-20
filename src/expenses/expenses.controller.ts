@@ -3,7 +3,7 @@ import { ExpensesService } from './expenses.service';
 import { AccessTokenGuard } from "../auth/guard/jwt-token.guard";
 import { User } from "../commons/decorator/users.decorator";
 import { QuerySearchDto } from "./dto/query-search.dto";
-import { ICategoryByTotalCost } from "./interface/expenses-service.interface";
+import { ICategoryByTotalCost, IExpenseGuide, IRecommendTodayExpense } from './interface/expenses-service.interface';
 
 
 @Controller('expenses')
@@ -16,8 +16,13 @@ export class ExpensesController {
 		return this.expensesService.findExpenses(querySearchDto, userId);
 	}
 
+	@Get('/recommend')
+	recommendTodayExpense(@User('id') userId: string):Promise<IRecommendTodayExpense>{
+		return this.expensesService.recommendTodayExpense(userId);
+	}
+
 	@Get('/guide')
-	expenseGuide(@User('id')userId:string){
+	expenseGuide(@User('id')userId:string):Promise<IExpenseGuide>{
 		return this.expensesService.expenseGuide(userId);
 	}
 }

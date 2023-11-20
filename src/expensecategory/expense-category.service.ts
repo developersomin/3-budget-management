@@ -46,7 +46,6 @@ export class ExpenseCategoryService {
 				id: category.id,
 			},
 		});
-		//await this.expensesService.updateTotalCostExpense(expense, expense.totalCost + cost, qr);
 		return result;
 	}
 
@@ -94,8 +93,6 @@ export class ExpenseCategoryService {
 		}
 		const expenseId = expenseCategory.expense.id;
 		const expense = await this.expensesService.getExpense(expenseId);
-		//const differCost = expenseCategory.cost - cost; //500 - 400
-		//await this.expensesService.updateTotalCostExpense(expense, expense.totalCost - differCost, qr);
 		return result;
 	}
 
@@ -107,7 +104,6 @@ export class ExpenseCategoryService {
 		}
 		const expenseId = expenseCategory.expense.id;
 		const expense = await this.expensesService.getExpense(expenseId);
-		//await this.expensesService.updateTotalCostExpense(expense, expense.totalCost - expenseCategory.cost, qr);
 		const result = await repository.softDelete({ id: expenseCategoryId });
 		return result.affected ? true : false;
 	}
