@@ -1,6 +1,8 @@
 import { SelectQueryBuilder } from "typeorm";
 import { Expenses } from "../entity/expenses.entity";
 import { ExpenseCategory } from "../../expensecategory/entity/expenses-category.entity";
+import { IProperAmount } from '../../budgets/interface/budget-service.interface';
+import { RecommendEnum } from '../enum/recommend.enum';
 
 export interface ICalculateDate {
   year: number;
@@ -25,12 +27,7 @@ export interface IFindExpensesQuery {
   maxCost: number;
 }
 
-export interface IUsedUntilTodayExpense{
-  [categoryName:string]:number;
-  totalTodayCost: number;
-}
-
-interface CategoryNameToNumberMap {
+export interface CategoryNameToNumberMap {
 	[categoryName: string]: number;
 }
 
@@ -51,7 +48,27 @@ export interface ICategoryByTotalCost{
   expenseCategories: ExpenseCategory[];
 }
 
+export interface IUsedUntilTodayExpense{
+  totalCost: number;
+  categoryByTotalCost: ICategoryBySum[];
+}
+
 export interface ICompareExpenseWithLastMonth {
 	totalPercent: number;
 	categoryPercent: CategoryNameToNumberMap;
+}
+
+export interface IExpenseGuide {
+	usedUntilTodayExpense: IUsedUntilTodayExpense;
+	calcProperBudget: IProperAmount;
+	riskPercent: IRiskPercent;
+}
+
+export interface IRiskPercent {
+	[categoryName: string]: string;
+}
+
+export interface IRecommendTodayExpense {
+	restTodayBudgetAmount: CategoryNameToNumberMap;
+	message: RecommendEnum;
 }

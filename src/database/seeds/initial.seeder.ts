@@ -92,7 +92,7 @@ export default class InitialDatabaseSeed implements Seeder {
 		
 		for (let i = 0; i < expenses.length; i++) {
 			for (let j = 0; j < 50; j++) {
-				const cost = Math.round(Math.floor(Math.random() * (13000 - 500) + 500) / 100) * 100;
+				const cost = Math.round(Math.floor(Math.random() * (13000 - 4000) + 4000) / 100) * 100;
 				const expenseId = expenses[i].id;
 				const categoryId = categories[Math.floor(Math.random() * categories.length)].id;
 				const now = new Date();

@@ -7,7 +7,7 @@ import { CategoryService } from "../category/category.service";
 import { DesignBudgetDto } from "./dto/design-budget.dto";
 import { Users } from "../users/entity/users.entity";
 import { BudgetCategoryService } from "../budgetcategory/budget-category.service";
-import { ICalcProperBudget } from "./interface/budget-service.interface";
+import { IProperAmount } from './interface/budget-service.interface';
 import { BudgetCategory } from '../budgetcategory/entity/budgets-category.entity';
 
 @Injectable()
@@ -73,18 +73,21 @@ export class BudgetsService {
 		});
 	}
 
-	calcProperBudget(budget: Budgets, lastDayCount: number, day: number): ICalcProperBudget {
+	calcProperBudget(budget: Budgets, lastDayCount: number, day: number): IProperAmount {
 		const totalAmount = budget.totalAmount;
-		const todayProperAmount = (totalAmount / lastDayCount) * day;
-
+		const todayProperAmount = Math.round(((totalAmount / lastDayCount) * day) / 100) * 100;
 		const budgetCategories = budget.budgetCategory;
-		const todayBudgetByCategory = {};
+		const todayBudgetByCategory = [];
 		for (const budgetCategory of budgetCategories) {
-			const properAmountByCategory = (budgetCategory.amount / totalAmount) * todayProperAmount;
+			const categoryByAmount =
+				Math.round(((budgetCategory.amount / totalAmount) * todayProperAmount) / 100) * 100;
 			const categoryName = budgetCategory.category.name;
-			todayBudgetByCategory[categoryName] = properAmountByCategory;
+			todayBudgetByCategory.push({
+				categoryName,
+				categoryByAmount,
+			})
 		}
-		return { ...todayBudgetByCategory, todayProperAmount };
+		return { todayProperAmount, todayBudgetByCategory };
 	}
 
 	/** 예산 설계 추천 API
@@ -110,8 +113,7 @@ export class BudgetsService {
 			sum += budgetRatio[key];
 		}
 		const floorValue = totalAmount - sum;
-		const keyArray = Object.keys(budgetRatio);
-		budgetRatio[keyArray[0]] += floorValue;
+		budgetRatio['기타'] += floorValue;
 		for (let key in budgetRatio) {
 			await this.budgetCategoryService.budgetByCategory(
 				{
@@ -166,8 +168,7 @@ export class BudgetsService {
 		}
 		for (const key in budgetRatio) {
 			budgetRatio[key] = budgetRatio[key] / count;
-			console.log(budgetRatio[key]);
-			if (budgetRatio[key] === 0) {
+			if (budgetRatio[key] === 0 && key !== '기타') {
 				delete budgetRatio[key];
 			}
 		}
