@@ -54,17 +54,17 @@ export interface IUsedUntilTodayExpense{
 }
 
 export interface ICompareExpenseWithLastMonth {
-	totalPercent: number;
-	categoryPercent: CategoryNameToNumberMap;
+	totalConsumptionRate :string,
+	categoryByConsumptionRate: IPercent,
 }
 
 export interface IExpenseGuide {
 	usedUntilTodayExpense: IUsedUntilTodayExpense;
 	calcProperBudget: IProperAmount;
-	riskPercent: IRiskPercent;
+	riskPercent: IPercent;
 }
 
-export interface IRiskPercent {
+export interface IPercent {
 	[categoryName: string]: string;
 }
 

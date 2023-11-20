@@ -3,7 +3,12 @@ import { ExpensesService } from './expenses.service';
 import { AccessTokenGuard } from "../auth/guard/jwt-token.guard";
 import { User } from "../commons/decorator/users.decorator";
 import { QuerySearchDto } from "./dto/query-search.dto";
-import { ICategoryByTotalCost, IExpenseGuide, IRecommendTodayExpense } from './interface/expenses-service.interface';
+import {
+	ICategoryByTotalCost,
+	ICompareExpenseWithLastMonth,
+	IExpenseGuide,
+	IRecommendTodayExpense,
+} from './interface/expenses-service.interface';
 
 
 @Controller('expenses')
@@ -24,5 +29,14 @@ export class ExpensesController {
 	@Get('/guide')
 	expenseGuide(@User('id')userId:string):Promise<IExpenseGuide>{
 		return this.expensesService.expenseGuide(userId);
+	}
+
+	@Get('/compared/LastMonth')
+	compareExpenseWithLastMonth(@User('id')userId:string):Promise<ICompareExpenseWithLastMonth>{
+		return this.expensesService.compareExpenseWithLastMonth(userId);
+	}
+	@Get('/compared/LastWeek')
+	compareExpenseWithLastWeek(@User('id')userId:string): Promise<string>{
+		return this.expensesService.compareExpenseWithLastWeek(userId);
 	}
 }
