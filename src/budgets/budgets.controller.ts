@@ -7,6 +7,7 @@ import { QueryRunnerDecorator } from '../commons/decorator/query-runner.decorato
 import { QueryRunner } from 'typeorm';
 import { TransactionInterceptor } from '../commons/interceptor/transaction.interceptor';
 import { Budgets } from './entity/budgets.entity';
+import { BudgetCategory } from '../budgetcategory/entity/budgets-category.entity';
 
 @Controller('budgets')
 export class BudgetsController {
@@ -19,7 +20,7 @@ export class BudgetsController {
 		@Body() designBudgetDto: DesignBudgetDto,
 		@User('id') userId: string,
 		@QueryRunnerDecorator() qr: QueryRunner,
-	): Promise<Budgets> {
+	): Promise<BudgetCategory[]> {
 		return this.budgetsService.designBudget(designBudgetDto, userId, qr);
 	}
 }

@@ -1,4 +1,4 @@
-import { BadRequestException, forwardRef, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, InternalServerErrorException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Budgets } from './entity/budgets.entity';
 import { QueryRunner, Repository } from 'typeorm';
@@ -8,6 +8,7 @@ import { DesignBudgetDto } from "./dto/design-budget.dto";
 import { Users } from "../users/entity/users.entity";
 import { BudgetCategoryService } from "../budgetcategory/budget-category.service";
 import { ICalcProperBudget } from "./interface/budget-service.interface";
+import { BudgetCategory } from '../budgetcategory/entity/budgets-category.entity';
 
 @Injectable()
 export class BudgetsService {
@@ -97,7 +98,7 @@ export class BudgetsService {
 	 * 8.나의 총 예산 금액에 비율을 곱하여 예산 설계 금액을 추천해줌
 	 * 9.만원 단위로 반올림 했기 때문에 차이가 조금 있음 이 부분은 차이난 만큼 기타에서 빼주고 더해줌
 	 */
-	async designBudget(dto: DesignBudgetDto, userId: string, qr: QueryRunner): Promise<Budgets> {
+	async designBudget(dto: DesignBudgetDto, userId: string, qr: QueryRunner): Promise<BudgetCategory[]> {
 		const { year, month, totalAmount } = dto;
 		const users = await this.findBudgetedUser();
 		const budgetRatio = await this.sumRatioUsers(users);
@@ -124,7 +125,7 @@ export class BudgetsService {
 			);
 		}
 		const budget = await this.findByMonthAndUserId({ year, month }, userId, qr);
-		return budget;
+		return budget.budgetCategory;
 	}
 
 	async findBudgetedUser(): Promise<Users[]> {
