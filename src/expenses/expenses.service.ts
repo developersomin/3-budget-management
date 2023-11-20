@@ -6,13 +6,11 @@ import { BudgetsService } from "../budgets/budgets.service";
 import {
 	CategoryNameToNumberMap,
 	ICalculateDate, ICategoryBySum, ICategoryByTotalCost, ICompareExpenseWithLastMonth, IExpenseGuide,
-	IExpenseGuideResult,
 	IFindExpensesQuery, IRecommendTodayExpense,
 	IUsedUntilTodayExpense,
 } from './interface/expenses-service.interface';
 import { QuerySearchDto } from "./dto/query-search.dto";
 import { RecommendEnum } from './enum/recommend.enum';
-import { ExpenseCategory } from '../expensecategory/entity/expenses-category.entity';
 import { Budgets } from '../budgets/entity/budgets.entity';
 
 @Injectable()
@@ -199,10 +197,10 @@ export class ExpensesService {
 			const categoryName = budgetCategory.categoryName;
 			const categoryByAmount = budgetCategory.categoryByAmount;
 			console.log(categoryByTotalCost[categoryName]+"/"+budgetCategory.categoryByAmount);
-			riskPercent[categoryName] = Math.round((categoryByTotalCost[categoryName] / categoryByAmount) * 100) + '%';
+			riskPercent[categoryName] = Math.round((categoryByTotalCost[categoryName] / categoryByAmount) * 100) + ' %';
 		}
 		riskPercent['total'] =
-			Math.round((usedUntilTodayExpense.totalCost / calcProperBudget.todayProperAmount) * 100) + '%';
+			Math.round((usedUntilTodayExpense.totalCost / calcProperBudget.todayProperAmount) * 100) + ' %';
 		console.log(usedUntilTodayExpense.totalCost+"/"+calcProperBudget.todayProperAmount);
 		return {
 			usedUntilTodayExpense,
@@ -295,10 +293,8 @@ export class ExpensesService {
 			day,
 		);
 		const budgetCategories = budget.budgetCategory;
-
 		const { totalCost, categoryByTotalCost } = await this.usedUntilTodayExpense(userId, firstDay, now, year, month);
 		const changedCategoryByTotalCost = this.changedCategoryByTotalCost(categoryByTotalCost, budget);
-
 		const restTodayBudgetAmount = {};
 		for (const budgetCategory of budgetCategories) {
 			const categoryName = budgetCategory.category.name;
@@ -324,16 +320,20 @@ export class ExpensesService {
 		} else {
 			message = RecommendEnum.DIE;
 		}
-		
 		return {
 			restTodayBudgetAmount,
 			message,
 		};
 	}
 
+	/**
+	 * 1.예를 들어 오늘은 11/21 이다.
+	 * 2.10/1 00:00 부터 10/22 00:00까지 총 지출한 비용을 계산한다.
+	 * 3.11/1 00:00 부터 11/22 00:00까지 총 지출한 비용을 계산한다.
+	 * 4. 3번/2번*100 을 하여 지난 달 대비 이번달 소비율을 구한다.
+	 */
 	async compareExpenseWithLastMonth(userId: string): Promise<ICompareExpenseWithLastMonth> {
 		const { lastMonthFirstDay, lastMonth, firstDay, today } = this.calcDate();
-		const qb = this.expensesRepository.createQueryBuilder('expenses');
 		const lastMonthCategoryByCost = await this.searchCategoryByTotalCost({
 			userId,
 			startDate: lastMonthFirstDay,
@@ -342,6 +342,9 @@ export class ExpensesService {
 			minCost: null,
 			maxCost: null,
 		});
+		if (!lastMonthCategoryByCost) {
+			throw new BadRequestException('지난 달 지출 기록이 없습니다.');
+		}
 		const lastMonthTotalCost = await this.searchTotalCost({
 			userId,
 			startDate: lastMonthFirstDay,
@@ -366,29 +369,39 @@ export class ExpensesService {
 			minCost: null,
 			maxCost: null,
 		});
+		const totalConsumptionRate = Math.round((nowTotalCost / lastMonthTotalCost) * 100);
 		const result = {
-			totalPercent: nowTotalCost / lastMonthTotalCost,
-			categoryPercent: {},
+			totalConsumptionRate: totalConsumptionRate+" %",
+			categoryByConsumptionRate: {},
 		};
 		for (const category of lastMonthCategoryByCost) {
-			result.categoryPercent[category.categoryName] = 1 / category.categoryByTotalCost;
+			result.categoryByConsumptionRate[category.categoryName] = 1 / category.categoryByTotalCost;
 		}
 		for (const category of nowCategoryByCost) {
-			if (result.categoryPercent[category.categoryName]) {
-				result.categoryPercent[category.categoryName] =
-					category.categoryByTotalCost * result.categoryPercent[category.categoryName];
+			if (result.categoryByConsumptionRate[category.categoryName]) {
+				result.categoryByConsumptionRate[category.categoryName] =
+					Math.round(
+						category.categoryByTotalCost * result.categoryByConsumptionRate[category.categoryName] * 100,
+					) + ' %';
 			} else {
-				result.categoryPercent[category.categoryName] = category.categoryByTotalCost;
+				result.categoryByConsumptionRate[category.categoryName] = category.categoryByTotalCost;
 			}
 		}
 		return result;
 	}
-	async compareExpenseWithLastWeek(userId: string): Promise<number> {
-		const { aWeekAgo, today } = this.calcDate();
+
+	/**
+	 * 1.예를 들어 오늘은 11/21 화요일이다.
+	 * 2.7일 전인 11/14 화요일의 지출 비용을 구한다. (11/14 00:00 ~11/15 00:00)
+	 * 3.오늘 지출 비용을 구한다. (11/21 00:00 ~11/22 00:00)
+	 * 4. 3번/2번*100 을 하여 지난 달 화요일 대비 이번달 화요일 소비율을 구한다.
+	 */
+	async compareExpenseWithLastWeek(userId: string): Promise<string> {
+		const { aWeekAgo, today,now } = this.calcDate();
 		const beforeToday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1);
 		const beforeAWeekAgo = new Date(aWeekAgo.getFullYear(), aWeekAgo.getMonth(), aWeekAgo.getDate() - 1);
-		const qb = this.expensesRepository.createQueryBuilder('expenses');
-
+		const dayOfWeek = now.getDay();
+		const daysOfWeek = ["일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"];
 		const lastMonthTotalCost = await this.searchTotalCost({
 			userId,
 			startDate: beforeAWeekAgo,
@@ -397,7 +410,9 @@ export class ExpensesService {
 			minCost: null,
 			maxCost: null,
 		});
-
+		if(!lastMonthTotalCost){
+			throw new BadRequestException(`지난 주 ${daysOfWeek[dayOfWeek]}에 지출한 기록이 없습니다.`);
+		}
 		const nowTotalCost = await this.searchTotalCost({
 			userId,
 			startDate: beforeToday,
@@ -406,9 +421,7 @@ export class ExpensesService {
 			minCost: null,
 			maxCost: null,
 		});
-
-		const totalPercent = nowTotalCost / lastMonthTotalCost;
-
-		return totalPercent;
+		const totalConsumptionRate = Math.round((nowTotalCost / lastMonthTotalCost) * 100) + ' %';
+		return totalConsumptionRate;
 	}
 }
