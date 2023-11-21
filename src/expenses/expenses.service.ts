@@ -132,8 +132,8 @@ export class ExpensesService {
 			.innerJoinAndSelect('expenses.expenseCategory', 'expenseCategory')
 			.innerJoinAndSelect('expenseCategory.category', 'category')
 			.where('users.id = :userId', { userId })
-			.andWhere('expenseCategory.updatedAt >= :startDate', { startDate })
-			.andWhere('expenseCategory.updatedAt <= :endDate', { endDate });
+			.andWhere('expenseCategory.createdAt >= :startDate', { startDate })
+			.andWhere('expenseCategory.createdAt <= :endDate', { endDate });
 		if (categoryId) {
 			qb.andWhere('category.id = :categoryId', { categoryId });
 		}
