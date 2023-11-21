@@ -26,7 +26,7 @@ export class ExpenseCategoryService {
 		qr: QueryRunner
 	): Promise<ExpenseCategory> {
 		const repository = this.getRepository(qr);
-		const { year, month, cost, memo, categoryName, isExclude } = createExpenseCategoryDto;
+		const { year, month, cost, memo, categoryName, isExclude,createdAt } = createExpenseCategoryDto;
 		let expense = await this.expensesService.findByMonthAndUserId({ year, month }, userId);
 		if (!expense) {
 			expense = await this.expensesService.createExpense({ year, month }, userId, qr);
@@ -39,6 +39,7 @@ export class ExpenseCategoryService {
 			cost,
 			memo,
 			isExclude,
+			createdAt,
 			expense: {
 				id: expense.id,
 			},
@@ -62,7 +63,7 @@ export class ExpenseCategoryService {
 		qr:QueryRunner
 	): Promise<ExpenseCategory> {
 		const repository = this.getRepository();
-		const { memo, cost, categoryName, isExclude } = updateExpenseCategoryDto;
+		const { memo, cost, categoryName, isExclude,createdAt } = updateExpenseCategoryDto;
 		const expenseCategory = await this.getExpenseCategory(expenseCategoryId);
 		if (!expenseCategory) {
 			throw new BadRequestException('수정할 지출 내역이 존재하지 않습니다.');
@@ -79,6 +80,7 @@ export class ExpenseCategoryService {
 				memo,
 				isExclude,
 				cost,
+				createdAt,
 				category: {
 					id: category.id,
 				},
