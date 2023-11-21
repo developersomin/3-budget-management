@@ -1,73 +1,132 @@
+![dsadsa](https://github.com/developersomin/3-budget-management/assets/127207131/4e14f718-5465-4164-b4ab-6d36138b3130)
+
+<h1 align="center">예산 관리 어플리케이션</h1>
+
 <p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
+본 서비스는 사용자들이 개인 재무를 관리하고 지출을 추적하는 데 도움을 주는 애플리케이션입니다. 
+<p align="center">
+이 앱은 사용자들이 예산을 설정하고 지출을 모니터링하며 재무 목표를 달성하는 데 도움이 됩니다. 
 </p>
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+<br>
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://coveralls.io/github/nestjs/nest?branch=master" target="_blank"><img src="https://coveralls.io/repos/github/nestjs/nest/badge.svg?branch=master#9" alt="Coverage" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow"></a>
+<h2 align="center">Skills</h2>
+<p align="center">
+<img src="https://img.shields.io/badge/Node.js-339933">&nbsp;
+<img src="https://img.shields.io/badge/Nest.js-E0234E">&nbsp;
+<img src="https://img.shields.io/badge/TypeScript-3178C6"><br>
+<img src="https://img.shields.io/badge/TypeORM-fcad03">&nbsp;
+<img src="https://img.shields.io/badge/MySQL-00758F">&nbsp;
 </p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
 
-## Description
+<br>
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## 📖 목차
 
-## Installation
+1. [Getting Started](#Getting-Started)
+2. [ERD](#ERD)
+3. [REST API](#REST-API)
+4. [구현 내용](#구현-내용)
+5. [Authors](#Authors)
 
-```bash
-$ yarn install
-```
+<br>
 
-## Running the app
+## Getting Started
 
-```bash
-# development
-$ yarn run start
-
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
-```
-
-## Test
+데이터베이스 스키마 생성 후, 스크립트 파일 실행으로 초기 설정
 
 ```bash
-# unit tests
-$ yarn run test
-
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+# docker 빌드
+docker-compose build
+# docker 실행
+docker-compose up
+# 더미데이터 생성
+yarn seed:run
 ```
 
-## Support
+<br>
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## ERD
 
-## Stay in touch
+- 사용자 ↔️ 예산 `1:N`
+    - 하나의 사용자가 여러 개의 예산을 등록할 수 있다. 
+- 사용자 ↔️ 지출 `1:N`
+    - 하나의 사용자가 여러 개의 지출을 등록할 수 있다. 
+- 예산 ↔️ 카테고리 `M:N`
+    - 하나의 예산이 여러 개의 카테고리를 등록할 수 있고 하나의 카테고리가 여러개의 예산을 등록 할 수 있다. 
+    - `M:N` 를 `예산_카테고리`를 만들어 `1:N` `N:1` 관계로 구성 
+- 지출 ↔️ 카테고리 `M:N`
+    - 하나의 지출이 여러 개의 카테고리를 등록할 수 있고 하나의 카테고리가 여러개의 지출을 등록 할 수 있다.
+    - `M:N` 를 `지출_카테고리`를 만들어 `1:N` `N:1` 관계로 구성
 
-- Author - [Kamil Myśliwiec](https://kamilmysliwiec.com)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+![image](https://github.com/developersomin/2-gis-best-restaurant/assets/127207131/2dcfe6fa-33d4-49ee-b560-cc4acbb85aa2)
 
-## License
 
-Nest is [MIT licensed](LICENSE).
+<br>
+
+## REST API
+
+> [`노션 페이지 로 이동! 🏃🏻‍💨]()
+
+<br>
+
+## 주요 구현 내용
+
+#### 사용자
+- 닉네임, 비밀번호를 사용하여 회원가입하고, `bcrypt`로 비밀번호를 암호화한다.
+- 로그인을 하면 `AccessToken` 과 `refeshToken`을 반환하여 클라이언트에 저장한다.
+- 로그인 이후 모든 `API` 요청에 대해 `JWT` 유효성을 검증한다.
+- `AccessToken` 만료시 `refeshToken` 으로 `AccessToken`으로 재발급 할 수 있다.
+- `refeshToken` 만료 시 다시 로그인하여 토큰을 재발급 받는다.
+![스크린샷 2023-11-07 23-56-03](https://github.com/developersomin/2-gis-best-restaurant/assets/127207131/4d7a09f9-bedd-4e53-a5b4-138ec2bfa843)
+
+#### 더미 데이터 생성
+- 테스트를 위해 typeorm-extension 패키지를 사용하여 Seeding
+
+#### 예산 설계 추천 서비스 
+- 예산 설게된 모든 사용자를 가져와 평균 예산을 구한다.
+- 사용들이 예산 설계에 사용한 모든 카테고리 목록을 가져온다.
+- 예산이 설계된 모든 사용자들의 카테고리별 비율을 계산하고 10% 미만인 비율들은 기타 카테고리에 저장한다.
+- 다 더해진 카테고리 비율들을 모든 사용자의 수만큼 나누어 평균 비율을 구한다.
+- 나의 총 예산 금액에 비율을 곱하여 예산 설계 금액을 추천해준다.
+- 만원 단위로 반올림 하여 가독성을 높이고 차이나는 부분은 기타 카테고리에 더해준다.
+
+#### 지출 기록
+- 지출 생성은 지출 금액과 카테고리와 메모를 입력하여 생성한다.
+- CRUD 를 구현
+- 읽기 중 목록을 읽을 때 기간은 필수 이며 조회된 모든 내용의 지출 합계, 카테고리별 지출 합계를 같이 반환해야한다. 
+- 또한 특정 카테고리만 조회할수 도 있고 최소 최대 금액으로 조회 가능하다.
+- 합계 제외 처리한 지출은 목록에는 포함되지만 모든 지출 합계에서 제외된다.
+  
+#### 지출 컨설팅 
+- 이번달 예산을 가져온다.
+- 이번달부터 지금까지의 총 지출 비용을 계산한다.
+- 이번달 설정한 카테고리 별 예산과 오늘까지 사용한 카테고리별 지출 비용을 빼서 남은 예산을 구한다.
+- 남은 예산을 남은 일자로 나누어 하루 사용할 예산을 설정한다.
+- 만약 카테고리별 하루 예산이 3천원 미만일 때는 최소 금액 3천원을 반환한다. 
+- 이번달 총 예산에서 이번달 총 일수를 나누어 하루 적정 예산 금액을 구한다.
+- 하루 적정 예산 금액을 오늘까지 일수를 곱하여 하루 적정금액을 오늘까지 사용했을 때 금액을 구한다.
+- 남은 예산과 비교하여 잘 아끼고 있으면 아끼고 있다는 메세지 or 절약하지 않으면 절약하지 않는다는 메세지를 표출한다. 
+
+#### 오늘 지출 안내
+- 이번달 1일부터 현재까지 지출한 비용을 계산한다.
+- 이번달 예산을 가져온다.
+- 이번달 예산을 가지고 1일부터 현재까지 사용해야 할 적정 금액을 계산한다.
+- 이번달 예산 잡은것으로 이번달 총 일수를 나누어 하루 적정 지불 금액을 구한다.
+- 하루 적정 지불 금액으로 오늘날짜를 곱하여 오늘까지 적정 지불 금액을 구한다.
+- 이번달까지 사용한 비용 / 적정 지불 금액 * 100  => 위험도를 구한다.
+- 만약 지불한 카테고리가 예산 설계한 카테고리에 없으면 지불한 카테고리를 기타 카테고리로 빼서 계산한다.
+
+#### 지출 통계 
+- 지난 달 대비 총액, 카테고리별 소비율
+    - 예를 들어 오늘은 11/21 이다.
+    - 10/1 00:00 부터 10/22 00:00까지 총 지출한 비용을 계산한다.
+    - 11/1 00:00 부터 11/22 00:00까지 총 지출한 비용을 계산한다.
+    - 위 두개를 나누고 100 을 곱하여 지난 달 대비 이번달 소비율을 구한다.
+- 지난 요일 소비율 
+    - 예를 들어 오늘은 11/21 화요일이다.
+    - 7일 전인 11/14 화요일의 지출 비용을 구한다. (11/14 00:00 ~11/15 00:00)
+    - 오늘 지출 비용을 구한다. (11/21 00:00 ~11/22 00:00)
+    - 위 두개를 나누고 100 을 곱하여 지난 요일 소비율을 구한다.
+
+<br>
