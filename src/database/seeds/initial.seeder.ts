@@ -98,8 +98,7 @@ export default class InitialDatabaseSeed implements Seeder {
 				const now = new Date();
 				let date: number;
 				if (expenses[i].month === now.getMonth() + 1) {
-					const before = now.getDate() - 1;
-					date = Math.floor(Math.random() * before + 1);
+					date = Math.floor(Math.random() * now.getDate() + 1);
 				} else {
 					date = Math.floor(Math.random() * (30 - 1) + 1);
 				}

@@ -1,4 +1,5 @@
 import {
+	BadRequestException,
 	CallHandler,
 	ExecutionContext,
 	Injectable,
@@ -23,8 +24,11 @@ export class TransactionInterceptor implements NestInterceptor {
 				catchError(async (e)=>{
 					await qr.rollbackTransaction();
 					await qr.release();
+					if(e instanceof BadRequestException){
+						const validationErrorMessage = e.getResponse()['message'];
+						throw new BadRequestException(validationErrorMessage);
+					}
 					throw new InternalServerErrorException(e.message);
-
 				}),
 				tap(async ()=>{
 					await qr.commitTransaction();

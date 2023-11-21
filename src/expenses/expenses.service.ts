@@ -189,19 +189,19 @@ export class ExpensesService {
 		const { year, month, day, lastDayCount, firstDay, now } = this.calcDate();
 		const usedUntilTodayExpense = await this.usedUntilTodayExpense(userId, firstDay, now, year, month);
 		const budget = await this.budgetsService.findByMonthAndUserId({ year, month }, userId);
+		if (!budget) {
+			throw new InternalServerErrorException('설정된 예산이 없습니다.');
+		}
 		const calcProperBudget = this.budgetsService.calcProperBudget(budget, lastDayCount, day);
 		const riskPercent = {};
 		const categoryByTotalCost = this.changedCategoryByTotalCost(usedUntilTodayExpense.categoryByTotalCost, budget);
-		console.log(calcProperBudget.todayBudgetByCategory);
 		for (const budgetCategory of calcProperBudget.todayBudgetByCategory) {
 			const categoryName = budgetCategory.categoryName;
 			const categoryByAmount = budgetCategory.categoryByAmount;
-			console.log(categoryByTotalCost[categoryName]+"/"+budgetCategory.categoryByAmount);
 			riskPercent[categoryName] = Math.round((categoryByTotalCost[categoryName] / categoryByAmount) * 100) + ' %';
 		}
 		riskPercent['total'] =
 			Math.round((usedUntilTodayExpense.totalCost / calcProperBudget.todayProperAmount) * 100) + ' %';
-		console.log(usedUntilTodayExpense.totalCost+"/"+calcProperBudget.todayProperAmount);
 		return {
 			usedUntilTodayExpense,
 			calcProperBudget,
@@ -253,7 +253,7 @@ export class ExpensesService {
 	}
 
 	changedCategoryByTotalCost(categoryByTotalCost: ICategoryBySum[], budget: Budgets): CategoryNameToNumberMap {
-		const result = {};
+		const result = { "기타": 0 };
 		const budgetCategories = budget.budgetCategory;
 		for (const expenseCategory of categoryByTotalCost) {
 			const categoryName = expenseCategory.categoryName;
@@ -262,9 +262,7 @@ export class ExpensesService {
 			});
 			if (isNameMatched) {
 				result[categoryName] = expenseCategory.categoryByTotalCost;
-			} else if (!isNameMatched && !result['기타']) {
-				result['기타'] = expenseCategory.categoryByTotalCost;
-			} else if (!isNameMatched && result['기타']) {
+			} else {
 				result['기타'] += expenseCategory.categoryByTotalCost;
 			}
 		}
