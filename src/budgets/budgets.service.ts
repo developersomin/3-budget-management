@@ -106,7 +106,7 @@ export class BudgetsService {
 		const users = await this.findBudgetedUser();
 		const budgetRatio = await this.sumRatioUsers(users);
 		for (const key in budgetRatio) {
-			budgetRatio[key] = Math.floor((budgetRatio[key] * totalAmount) / 1000) * 1000;
+			budgetRatio[key] = Math.floor((budgetRatio[key] * totalAmount) / 10000) * 10000;
 		}
 		let sum = 0;
 		for (let key in budgetRatio) {
