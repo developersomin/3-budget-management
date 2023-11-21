@@ -66,7 +66,7 @@ yarn seed:run
 
 ## REST API
 
-> [`노션 페이지 로 이동! 🏃🏻‍💨]()
+> [`노션 페이지 로 이동! 🏃🏻‍💨](https://quixotic-trust-a91.notion.site/4-REST-API-93fcfc452e364b08a482e4cc32649b68)
 
 <br>
 
@@ -128,5 +128,14 @@ yarn seed:run
     - 7일 전인 11/14 화요일의 지출 비용을 구한다. (11/14 00:00 ~11/15 00:00)
     - 오늘 지출 비용을 구한다. (11/21 00:00 ~11/22 00:00)
     - 위 두개를 나누고 100 을 곱하여 지난 요일 소비율을 구한다.
+
+<br>
+
+## 프로젝트 수행 중 이슈
+ [ 순환 종속성 문제 발생 ](https://quixotic-trust-a91.notion.site/6fb1694abc444eec95e9cee1ef4a918f)
+
+ [ query parameter ](https://quixotic-trust-a91.notion.site/query-parameter-8d3fb1a1698348cbbdc66d523a932b12?pvs=4)
+
+[ 트랜잭션으로 인한 잘못된 에러 발생 ](https://quixotic-trust-a91.notion.site/702f2271de97482390ef38db63d2832e?pvs=4)
 
 <br>
