@@ -10,10 +10,12 @@ import { CategoryModule } from './category/category.module';
 import { AuthModule } from './auth/auth.module';
 import { BudgetCategoryModule } from './budgetcategory/budget-category.module';
 import { ExpenseCategoryModule } from './expensecategory/expense-category.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
     ConfigModule.forRoot(),
+    ScheduleModule.forRoot(),
     TypeOrmModule.forRoot({
       type: "mysql",
       host: process.env.DATABASE_HOST,
