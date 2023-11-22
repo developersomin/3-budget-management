@@ -12,6 +12,7 @@ import {
 import { QuerySearchDto } from "./dto/query-search.dto";
 import { RecommendEnum } from './enum/recommend.enum';
 import { Budgets } from '../budgets/entity/budgets.entity';
+import { Cron } from '@nestjs/schedule';
 
 @Injectable()
 export class ExpensesService {
@@ -184,7 +185,7 @@ export class ExpensesService {
 	 *              오늘까지 사용할 적정 금액,
 	 *              위험도
 	 *              위 3가지를 리턴한다.
-	 */
+	 */@Cron('0 20 * * * *')
 	async expenseGuide(userId: string): Promise<IExpenseGuide> {
 		const { year, month, day, lastDayCount, firstDay, now } = this.calcDate();
 		const usedUntilTodayExpense = await this.usedUntilTodayExpense(userId, firstDay, now, year, month);
@@ -279,6 +280,7 @@ export class ExpensesService {
 	 * 6. 이번달 설정 예산과 2번 하루 적정 예산으로 사용했을때의 오늘 까지 사용한 예산을 빼준다.
 	 * 6-1. 6번의 예산과 4번의 남은 예산을 비교하여 메세지를 출력한다.
 	 */
+	@Cron('0 08 * * * *')
 	async recommendTodayExpense(userId: string): Promise<IRecommendTodayExpense> {
 		const { firstDay, year, month, day, lastDayCount, now } = this.calcDate();
 		const budget = await this.budgetsService.findByMonthAndUserId({ year, month }, userId);
